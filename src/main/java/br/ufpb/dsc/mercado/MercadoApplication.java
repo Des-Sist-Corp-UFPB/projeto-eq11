@@ -1,7 +1,9 @@
 package br.ufpb.dsc.mercado;
 
+import br.ufpb.dsc.mercado.config.IAProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
  * Classe principal da aplicação Mercado.
@@ -24,6 +26,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 0.0.1-SNAPSHOT
  */
 @SpringBootApplication
+// Ativa o binding das propriedades studyai.ia.* na classe IAProperties
+@EnableConfigurationProperties(IAProperties.class)
 public class MercadoApplication {
 
     /**

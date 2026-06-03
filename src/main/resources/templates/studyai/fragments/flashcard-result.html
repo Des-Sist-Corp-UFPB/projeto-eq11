@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!--
+  Fragmentos devolvidos pelo POST /flashcards/gerar (via HTMX).
+  - cards : carrossel de flashcards (flip e navegação são client-side, em studyai.js)
+  - erro  : mensagem amigável quando a geração falha
+-->
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ============================ CARDS ============================ -->
+<div th:fragment="cards" class="result-section">
+    <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="card-title" style="margin-bottom:0" th:text="${deck.titulo}">Deck</div>
+            <span class="badge badge-purple" th:text="${cartoes.size()} + ' cartões'">0 cartões</span>
+        </div>
+
+        <!-- Cena 3D do cartão; clicar vira (flip) -->
+        <div class="flashcard-scene" onclick="fcFlip()">
+            <div class="flashcard" id="fc-card">
+                <div class="fc-face front">
+                    <div class="fc-label">Pergunta</div>
+                    <div class="fc-text" id="fc-front"></div>
+                </div>
+                <div class="fc-face back">
+                    <div class="fc-label">Resposta</div>
+                    <div class="fc-back-text" id="fc-back"></div>
+                </div>
+            </div>
+        </div>
+        <div class="fc-hint">Clique no cartão para ver a resposta</div>
+
+        <!-- Navegação do carrossel -->
+        <div class="fc-nav">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fcPrev()">← Anterior</button>
+            <div class="fc-progress"><div class="fc-progress-bar" id="fc-bar"></div></div>
+            <div class="fc-counter" id="fc-counter">1 / 1</div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fcNext()">Próximo →</button>
+        </div>
+    </div>
+
+    <!--
+      Carrega os cartões no JS de forma segura: cartoesJson é uma String JSON
+      serializada no servidor; o th:inline gera um literal de string que o
+      JSON.parse converte. Em seguida inicializa o carrossel.
+    -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.__cards = JSON.parse(/*[[${cartoesJson}]]*/ '[]');
+        fcInit();
+        /*]]>*/
+    </script>
+</div>
+
+<!-- ============================ ERRO ============================ -->
+<div th:fragment="erro" class="result-section">
+    <div class="card">
+        <div class="error-box">
+            <div class="error-icon">⚠️</div>
+            <div class="error-title">Erro ao gerar flashcards</div>
+            <div class="error-text" th:text="${mensagem}">Mensagem de erro</div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

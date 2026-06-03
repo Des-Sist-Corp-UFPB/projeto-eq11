@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!--
+  Home / dashboard do StudyAI.
+  Estende o layout: <html th:replace="~{studyai/layout :: layout(~{::main})}">
+  Estatísticas (decks/flashcards) vêm reais do HomeController.
+-->
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{studyai/layout :: layout(~{::main})}">
+<body>
+<main class="main">
+
+    <div class="welcome-banner">
+        <div class="welcome-name">Bom dia, Concurseiro 👋</div>
+        <div class="welcome-sub">Você está a um passo de dominar o conteúdo. O que vamos estudar hoje?</div>
+    </div>
+
+    <!-- ===== Estatísticas reais ===== -->
+    <div class="grid-3" style="margin-bottom:28px">
+        <div class="stat-card flash">
+            <div class="stat-label">Decks criados</div>
+            <div class="stat-value flash-col" th:text="${totalDecks}">0</div>
+            <div class="stat-sub">conjuntos de flashcards</div>
+        </div>
+        <div class="stat-card corr">
+            <div class="stat-label">Flashcards gerados</div>
+            <div class="stat-value green-col" th:text="${totalFlashcards}">0</div>
+            <div class="stat-sub">cartões de memorização</div>
+        </div>
+        <div class="stat-card prev">
+            <div class="stat-label">Módulos ativos</div>
+            <div class="stat-value amber-col">1</div>
+            <div class="stat-sub">de 3 planejados</div>
+        </div>
+    </div>
+
+    <!-- ===== Cards dos módulos ===== -->
+    <div class="section-title">Módulos</div>
+    <div class="grid-3" style="margin-bottom:28px">
+        <!-- FlashIA — ATIVO -->
+        <a class="module-card active-mod" th:href="@{/flashcards}">
+            <div class="module-icon" style="background:var(--accent-glow)">
+                <svg width="22" height="22" viewBox="0 0 20 20" fill="var(--accent2)"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.396 0 2.7.39 3.8 1.064A7.97 7.97 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
+            </div>
+            <div class="module-label">FlashIA <span class="badge badge-green">Ativo</span></div>
+            <div class="module-desc">Cole um resumo ou trecho de lei e transforme em flashcards otimizados para memorização ativa.</div>
+        </a>
+
+        <!-- CorretorIA — EM BREVE -->
+        <div class="module-card soon">
+            <div class="module-icon" style="background:var(--green-bg)">
+                <svg width="22" height="22" viewBox="0 0 20 20" fill="var(--green)"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+            </div>
+            <div class="module-label">CorretorIA <span class="badge badge-amber">Em breve</span></div>
+            <div class="module-desc">Correção de redação ENEM (5 competências), discursivas Cebraspe e peças OAB com feedback detalhado.</div>
+        </div>
+
+        <!-- PrevêTema — EM BREVE -->
+        <div class="module-card soon">
+            <div class="module-icon" style="background:var(--amber-bg)">
+                <svg width="22" height="22" viewBox="0 0 20 20" fill="var(--amber)"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+            </div>
+            <div class="module-label">PrevêTema <span class="badge badge-amber">Em breve</span></div>
+            <div class="module-desc">A IA analisa anos de histórico do ENEM e de bancas para projetar os temas mais prováveis do próximo exame.</div>
+        </div>
+    </div>
+
+    <!-- ===== Decks recentes ===== -->
+    <div class="section-title">Seus decks recentes</div>
+    <div th:if="${decksRecentes != null and !decksRecentes.isEmpty()}">
+        <div class="deck-item" th:each="deck : ${decksRecentes}">
+            <div class="deck-icon">📚</div>
+            <div class="deck-info">
+                <div class="deck-name" th:text="${deck.titulo}">Deck</div>
+                <div class="deck-meta">
+                    <span th:text="${deck.banca}">Banca</span>
+                    <span th:if="${deck.disciplina != null and !deck.disciplina.isEmpty()}"
+                          th:text="'· ' + ${deck.disciplina}">disciplina</span>
+                </div>
+            </div>
+            <div class="deck-count" th:text="${deck.flashcards.size()}">0</div>
+        </div>
+    </div>
+    <div th:if="${decksRecentes == null or decksRecentes.isEmpty()}" class="empty">
+        <div class="empty-icon">📚</div>
+        <div class="empty-title">Nenhum deck ainda</div>
+        <div class="empty-desc">Gere seus primeiros flashcards no módulo FlashIA</div>
+    </div>
+
+</main>
+</body>
+</html>

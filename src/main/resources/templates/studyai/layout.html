@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<!--
+  Layout base do StudyAI — porta a identidade visual do MVP (sidebar escura,
+  fontes Syne + DM Sans, paleta roxa). Fragmento reutilizável por todas as páginas.
+
+  Uso nas páginas filhas:
+    <html th:replace="~{studyai/layout :: layout(~{::main})}">
+  O conteúdo <main> da página é injetado no shell abaixo.
+-->
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(content)">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${titulo != null ? titulo + ' — StudyAI' : 'StudyAI'}">StudyAI</title>
+
+    <!-- CSRF: lidos pelo studyai.js para enviar o token nas requisições HTMX -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <!-- Fontes do MVP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+          rel="stylesheet"/>
+
+    <!-- Estilo do StudyAI -->
+    <link rel="stylesheet" th:href="@{/css/studyai.css}"/>
+</head>
+<body>
+
+<!-- ============================ SIDEBAR ============================ -->
+<aside class="sidebar">
+    <div class="logo">
+        <div class="logo-mark">Study<span>AI</span></div>
+        <div class="logo-sub">Concursos &amp; ENEM</div>
+    </div>
+    <nav>
+        <div class="nav-section">Menu</div>
+        <a class="nav-item" th:href="@{/}"
+           th:classappend="${requestURI != null and requestURI == '/'} ? 'active'">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+            Início
+        </a>
+
+        <div class="nav-section">Módulos</div>
+        <a class="nav-item" th:href="@{/flashcards}"
+           th:classappend="${requestURI != null and requestURI.startsWith('/flashcards')} ? 'active'">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.396 0 2.7.39 3.8 1.064A7.97 7.97 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
+            FlashIA
+        </a>
+        <span class="nav-item disabled">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+            CorretorIA
+            <span class="nav-soon">Em breve</span>
+        </span>
+        <span class="nav-item disabled">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+            PrevêTema
+            <span class="nav-soon">Em breve</span>
+        </span>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="plan-badge">
+            <div class="plan-name">Plano Gratuito</div>
+            <div class="plan-limit">
+                <span sec:authentication="name">usuário</span>
+            </div>
+            <!-- Logout via POST (exigido pelo Spring Security; o token CSRF vai no campo oculto) -->
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="logout-btn">Sair</button>
+            </form>
+        </div>
+    </div>
+</aside>
+
+<!-- ============================ CONTEÚDO ============================ -->
+<th:block th:replace="${content}">
+    <main class="main"><!-- conteúdo padrão (substituído pela página) --></main>
+</th:block>
+
+<!-- HTMX via WebJars -->
+<script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+<!-- JS do StudyAI (flip, carrossel, chips, CSRF) -->
+<script th:src="@{/js/studyai.js}"></script>
+
+</body>
+</html>

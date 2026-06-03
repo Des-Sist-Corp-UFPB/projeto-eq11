@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<!--
+  Página do módulo FlashIA.
+  O formulário usa HTMX: ao enviar, o POST /flashcards/gerar devolve um fragmento
+  com os cartões, que substitui #flash-resultado. Sem recarregar a página.
+-->
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{studyai/layout :: layout(~{::main})}">
+<body>
+<main class="main">
+
+    <div class="page-header">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <h1 class="page-title">FlashIA</h1>
+            <span class="badge badge-purple">Módulo 1</span>
+        </div>
+        <div class="page-desc">Cole um texto, resumo ou trecho de lei e gere flashcards otimizados para
+            memorização ativa em concursos e ENEM.</div>
+    </div>
+
+    <div class="grid-2" style="align-items:start">
+        <!-- ===== FORMULÁRIO ===== -->
+        <div>
+            <div class="card">
+                <div class="card-title">Configuração</div>
+
+                <!--
+                  hx-post   → endpoint que gera os cartões
+                  hx-target → onde o fragmento de resposta é inserido
+                  hx-swap   → substitui o conteúdo interno do alvo
+                  hx-indicator → mostra o spinner enquanto a IA processa
+                  hx-disabled-elt → desabilita o botão durante a requisição
+                -->
+                <form hx-post="/flashcards/gerar"
+                      hx-target="#flash-resultado"
+                      hx-swap="innerHTML"
+                      hx-indicator="#flash-loading"
+                      hx-disabled-elt="#btn-gerar">
+
+                    <div class="form-group">
+                        <label>Banca / Prova</label>
+                        <!-- Hidden input alimentado pelos chips (ver studyai.js) -->
+                        <input type="hidden" id="banca" name="banca" value="Geral"/>
+                        <div class="chips">
+                            <div class="chip selected" onclick="selectChip(this,'banca')">Geral</div>
+                            <div class="chip" onclick="selectChip(this,'banca')">ENEM</div>
+                            <div class="chip" onclick="selectChip(this,'banca')">Cebraspe</div>
+                            <div class="chip" onclick="selectChip(this,'banca')">FGV</div>
+                            <div class="chip" onclick="selectChip(this,'banca')">FCC</div>
+                            <div class="chip" onclick="selectChip(this,'banca')">Vunesp</div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Disciplina</label>
+                            <select name="disciplina">
+                                <option value="">Qualquer área</option>
+                                <option>Direito Constitucional</option>
+                                <option>Direito Administrativo</option>
+                                <option>Português</option>
+                                <option>Matemática</option>
+                                <option>Raciocínio Lógico</option>
+                                <option>Informática</option>
+                                <option>Administração Pública</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Qtd. de flashcards</label>
+                            <select name="quantidade">
+                                <option value="10">10 cartões</option>
+                                <option value="15" selected="selected">15 cartões</option>
+                                <option value="20">20 cartões</option>
+                                <option value="25">25 cartões</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Conteúdo para gerar flashcards</label>
+                        <textarea name="texto" rows="8"
+                                  placeholder="Cole aqui o texto do seu resumo, trecho de lei, artigo ou qualquer conteúdo que deseja memorizar..."
+                                  oninput="updateWC(this,'flash-wc')"></textarea>
+                        <div class="wc" id="flash-wc">0 palavras</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="btn-gerar"
+                            style="width:100%;justify-content:center">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                        Gerar Flashcards com IA
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== RESULTADO ===== -->
+        <div>
+            <!-- Indicador de carregamento HTMX (sibling do alvo, não é substituído) -->
+            <div id="flash-loading" class="card htmx-indicator">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">IA gerando flashcards...</div>
+                </div>
+            </div>
+            <div id="flash-resultado">
+                <!-- Placeholder inicial -->
+                <div class="card placeholder-card">
+                    <div class="placeholder-emoji">🃏</div>
+                    <div class="placeholder-text">Seus flashcards aparecerão aqui</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>
