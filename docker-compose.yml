@@ -1,0 +1,140 @@
+# =============================================================================
+# Docker Compose — StudyAI / equipe eq11
+# =============================================================================
+# Arquivo ÚNICO (substitui os antigos docker-compose.dev.yml e docker-compose.prod.yml).
+#
+# Porta exigida pelo professor (acesso da equipe):
+#     127.0.0.1:8111  ->  8080  (Spring Boot dentro do container)
+# Ou seja, a aplicação responde em  http://127.0.0.1:8111
+#
+# -----------------------------------------------------------------------------
+# COMO USAR
+#
+#   Subir tudo (Postgres + aplicação):
+#     docker compose up -d              # usa a imagem ${APP_IMAGE}, se definida
+#     docker compose up -d --build      # constrói a imagem localmente (docker/Dockerfile)
+#
+#   Ver logs / parar:
+#     docker compose logs -f app
+#     docker compose down               # para (mantém o volume do banco)
+#     docker compose down -v            # para e APAGA os dados do banco
+#
+#   Perfis opcionais:
+#     docker compose --profile dev  up -d adminer   # UI do banco em 127.0.0.1:8112
+#     docker compose --profile scan up trivy        # scan de vulnerabilidades
+#
+# CONFIGURAÇÃO:
+#   As variáveis vêm do arquivo .env na raiz (DB_*, APP_IMAGE). Sem .env, usa os
+#   defaults abaixo (eq11/eq11), suficientes para rodar a demonstração.
+# =============================================================================
+
+name: eq11
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Banco de dados PostgreSQL
+  # Não é publicado para a rede externa — só a aplicação o acessa (rede interna).
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: eq11-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-eq11}
+      POSTGRES_USER: ${DB_USER:-eq11}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-eq11}
+    volumes:
+      - eq11-postgres-data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-eq11} -d ${DB_NAME:-eq11}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - eq11-net
+
+  # ---------------------------------------------------------------------------
+  # Aplicação Spring Boot (StudyAI)
+  #   - image: usa a imagem publicada no GHCR (${APP_IMAGE}) quando definida no .env
+  #   - build: se a imagem não existir, `--build` a constrói a partir de docker/Dockerfile
+  # ---------------------------------------------------------------------------
+  app:
+    image: ${APP_IMAGE:-eq11-app:latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: eq11-app
+    environment:
+      # Perfil de produção (lê application-prod.yml, que monta a URL a partir de DB_*)
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      # Conexão com o banco — DB_HOST é o nome do serviço Postgres na rede interna
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-eq11}
+      DB_USER: ${DB_USER:-eq11}
+      DB_PASSWORD: ${DB_PASSWORD:-eq11}
+      # IA em modo demo por padrão (FlashIA funciona sem chave). Para IA real,
+      # defina STUDYAI_AI_MODO=real e as demais variáveis no .env.
+      STUDYAI_AI_MODO: ${STUDYAI_AI_MODO:-demo}
+      STUDYAI_AI_PROVEDOR: ${STUDYAI_AI_PROVEDOR:-anthropic}
+      STUDYAI_AI_API_KEY: ${STUDYAI_AI_API_KEY:-}
+      STUDYAI_AI_MODELO: ${STUDYAI_AI_MODELO:-claude-sonnet-4-20250514}
+    ports:
+      # Porta exigida pelo professor — vinculada apenas ao localhost do servidor
+      - "127.0.0.1:8111:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - eq11-net
+
+  # ---------------------------------------------------------------------------
+  # Adminer — interface web do banco (apenas no perfil "dev")
+  # Acesse: http://127.0.0.1:8112  (Servidor: postgres | Banco/Usuário/Senha: eq11)
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: eq11-adminer
+    profiles:
+      - dev
+    ports:
+      - "127.0.0.1:8112:8080"
+    depends_on:
+      - postgres
+    networks:
+      - eq11-net
+
+  # ---------------------------------------------------------------------------
+  # Trivy — scanner de vulnerabilidades (apenas no perfil "scan"; roda e sai)
+  # Uso: docker compose --profile scan up trivy
+  # ---------------------------------------------------------------------------
+  trivy:
+    image: aquasec/trivy:latest
+    container_name: eq11-trivy
+    profiles:
+      - scan
+    volumes:
+      - .:/project:ro
+      - trivy-cache:/root/.cache/trivy
+    command: fs /project --severity HIGH,CRITICAL --exit-code 1
+    networks:
+      - eq11-net
+
+volumes:
+  eq11-postgres-data:
+  trivy-cache:
+
+networks:
+  eq11-net:
+    driver: bridge

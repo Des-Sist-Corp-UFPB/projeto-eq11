@@ -1,343 +1,327 @@
-# Sistema StudyAI — Projeto Base DSC/UFPB
+# StudyAI BR 🎓🤖
 
-Projeto base (boilerplate) para a disciplina **Desenvolvimento de Sistemas Corporativos**.
+**Plataforma de estudos com IA para Concursos Públicos e ENEM.**
+Transforma textos, resumos e leis em material de estudo ativo — com a Inteligência
+Artificial rodando de forma **segura no backend**, dentro de um sistema corporativo completo.
 
-**Professor**: Rodrigo Rebouças | **UFPB — Campus IV**
-
----
-
-## Tecnologias
-
-| Camada | Tecnologia |
-|--------|-----------|
-| Backend | Java 21 + Spring Boot 3.4.5 |
-| Templates | Thymeleaf + HTMX 2.0 |
-| Frontend | Bootstrap 5.3 |
-| Banco | PostgreSQL 16 |
-| Migrações | Flyway 11 |
-| Segurança | Spring Security 6 |
-| Build | Maven 3.9 |
-| CI/CD | GitHub Actions |
+> **Disciplina:** Desenvolvimento de Sistemas Corporativos (DSC)
+> **Professor:** Rodrigo Rebouças · **Instituição:** UFPB — Campus IV · **Equipe:** eq11
 
 ---
 
-## Guia de Instalação para Alunos
-
-### Passo 1 — Instale o Java 21
-
-O projeto requer Java 21. Recomendamos o **Eclipse Temurin** (distribuição gratuita da Adoptium).
-
-**Windows / macOS / Linux:**
-1. Acesse https://adoptium.net/temurin/releases/?version=21
-2. Baixe o instalador para seu sistema operacional
-3. Execute o instalador e siga as instruções
-
-**Verificar se está correto:**
-```bash
-java -version
-# Esperado: openjdk version "21.x.x" ...
-```
-
-> **Dica para Windows:** durante a instalação, marque a opção *"Add to PATH"* e *"Set JAVA_HOME"*.
+## 📑 Sumário
+- [Visão geral](#-visão-geral)
+- [Módulos do produto](#-módulos-do-produto)
+- [Gestão de fases (onde estamos)](#-gestão-de-fases-onde-estamos)
+- [Tecnologias](#-tecnologias)
+- [Padrão arquitetural](#-padrão-arquitetural)
+- [Estrutura do projeto](#-estrutura-do-projeto)
+- [Como executar](#-como-executar)
+- [Acesso e portas](#-acesso-e-portas)
+- [Banco de dados e migrations](#-banco-de-dados-e-migrations)
+- [Testes](#-testes)
+- [Segurança (SAST)](#-segurança-sast)
+- [CI/CD e Deploy](#-cicd-e-deploy)
+- [Convenções de código](#-convenções-de-código)
+- [Solução de problemas](#-solução-de-problemas)
 
 ---
 
-### Passo 2 — Instale o Maven
+## 🔭 Visão geral
 
-O Maven é a ferramenta de build do projeto.
+O StudyAI resolve um problema concreto de quem estuda para concursos e ENEM: **converter
+conteúdo bruto em estudo ativo** (flashcards, correção de redação, previsão de temas), sem
+expor a chave de IA no navegador e guardando o histórico do aluno.
 
-**macOS (com Homebrew):**
-```bash
-brew install maven
+A regra de ouro do projeto: **a chamada de IA é sempre feita no servidor** (`IAService`),
+com a chave em variável de ambiente. O navegador nunca toca em segredos.
+
+---
+
+## 🧩 Módulos do produto
+
+| Módulo | O que faz | Status |
+|--------|-----------|:------:|
+| **FlashIA** | Gera flashcards (pergunta/resposta) a partir de um texto, salva em decks e exibe com flip + carrossel | ✅ **Funcionando** |
+| **CorretorIA** | Corrige redação ENEM (5 competências), discursiva Cebraspe e peça OAB | 🔜 Planejado |
+| **PrevêTema** | Projeta os temas mais prováveis da próxima prova a partir do histórico | 🔜 Planejado |
+
+> 💡 **Modo demo:** o FlashIA funciona **sem internet e sem chave de API**
+> (`studyai.ia.modo=demo`, padrão). Com uma chave configurada, o mesmo fluxo chama o
+> provedor real (Anthropic ou Gemini).
+
+---
+
+## 🚦 Gestão de fases (onde estamos)
+
+O desenvolvimento é incremental. Cada fase entrega algo demonstrável.
+
+| Fase | Entrega | Status |
+|:----:|---------|:------:|
+| **0** | **Fundação** — scaffold, identidade visual (tema escuro, Syne + DM Sans), layout Thymeleaf, login (Spring Security), Docker e CI/CD configurados | ✅ Concluída |
+| **1** | **FlashIA ponta a ponta** — domínio `Deck`/`Flashcard`, migration Flyway, `IAService` (interface) com modo demo + provedores reais, persistência, fragmentos HTMX, home com estatísticas reais | ✅ Concluída |
+| **2** | **CorretorIA** — correção ENEM/Discursiva/OAB; entidade `Correcao` com `payload` JSONB; 3 endpoints + fragmentos de resultado | 📍 **FASE ATUAL** |
+| **3** | **PrevêTema + Histórico** — entidade `Previsao`, seed do histórico ENEM, página de histórico paginada | ⬜ Planejada |
+| **4** | **Autenticação em banco + Planos** — entidade `Usuario` (`UserDetailsService`), planos GRATUITO/PRO e limites de uso impostos no servidor | ⬜ Planejada |
+| **5** | **Hardening & Pagamentos** — webhook de pagamento, cobertura de testes, ajustes finais de SAST e deploy | ⬜ Planejada |
+
+> 📍 **Estamos iniciando a Fase 2 (CorretorIA).** As Fases 0 e 1 estão concluídas e
+> validadas: já temos **um módulo de IA funcionando ponta a ponta** sobre uma base
+> corporativa, segura e pronta para deploy.
+
+---
+
+## 🛠 Tecnologias
+
+| Camada | Tecnologia | Versão |
+|--------|-----------|--------|
+| Linguagem | Java | 21 |
+| Framework | Spring Boot | 3.4.5 |
+| Web / MVC | Spring Web (Tomcat embutido) | 6.x |
+| Templates | Thymeleaf + **HTMX** | 3.x + 2.0.4 |
+| Interatividade | HTMX (Ajax sem SPA) + JS client-side mínimo | — |
+| Persistência | Spring Data JPA / Hibernate | 6.6 |
+| Banco de dados | PostgreSQL | 16 |
+| Migrations | Flyway | 11.x |
+| Segurança | Spring Security | 6.x |
+| Cliente HTTP (IA) | Spring `RestClient` | 6.x |
+| JSON | Jackson | 2.x |
+| Build | Maven | 3.9+ |
+| Testes | JUnit 5 + Testcontainers | — |
+| Container | Docker + Docker Compose | — |
+| CI/CD | GitHub Actions + GHCR | — |
+| SAST | SpotBugs + FindSecBugs, OWASP Dependency-Check, Semgrep, Trivy | — |
+
+---
+
+## 🏛 Padrão arquitetural
+
+### Arquitetura em camadas (Layered / N-tier) + MVC server-side
+A interface é renderizada no servidor (Thymeleaf) e a interatividade vem do **HTMX**
+(troca de fragmentos de HTML via Ajax, sem precisar de um framework SPA). As
+responsabilidades são separadas em camadas bem definidas:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Navegador  (Thymeleaf + HTMX + JS mínimo: flip, carrossel)  │
+└───────────────┬─────────────────────────────────────────────┘
+                │  HTTP / Ajax (hx-post, hx-target)
+┌───────────────▼─────────── controller/ ─────────────────────┐
+│  HomeController · FlashcardController · AuthController        │  ← entrada HTTP
+└───────────────┬─────────────────────────────────────────────┘
+┌───────────────▼─────────── service/ ────────────────────────┐
+│  FlashcardService  ──►  IAService (interface)                 │  ← regra de negócio
+│                          ├─ modo DEMO (offline)               │     (@Transactional)
+│                          └─ provedor real (Anthropic|Gemini)  │
+└───────────────┬─────────────────────────────────────────────┘
+┌───────────────▼─────────── repository/ ─────────────────────┐
+│  DeckRepository · FlashcardRepository (Spring Data JPA)       │  ← acesso a dados
+└───────────────┬─────────────────────────────────────────────┘
+┌───────────────▼─────────── domain/ ─────────────────────────┐
+│  Deck (1 ──► N) Flashcard   →   PostgreSQL (schema via Flyway)│  ← entidades JPA
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Windows:**
-1. Acesse https://maven.apache.org/download.cgi
-2. Baixe o arquivo `apache-maven-3.x.x-bin.zip`
-3. Extraia para uma pasta (ex.: `C:\maven`)
-4. Adicione `C:\maven\bin` à variável de ambiente `PATH`
+### Fluxo de uma requisição (FlashIA)
+1. O formulário envia `hx-post="/flashcards/gerar"` (HTMX).
+2. `FlashcardController` recebe um `FlashcardRequest` (record).
+3. `FlashcardService` monta os prompts e chama `IAService.completar(system, user)`.
+4. O `IAService` retorna cartões de **exemplo** (modo demo) **ou** chama o provedor real.
+5. O serviço faz **parse robusto do JSON** (remove cercas markdown, valida com Jackson).
+6. Persiste `Deck` + `Flashcard` e devolve um **fragmento Thymeleaf** com os cartões.
+7. O HTMX troca apenas o `#flash-resultado` — sem recarregar a página.
 
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt install maven
+### Padrões de projeto aplicados
+- **Injeção de Dependência** (construtor) em todos os componentes Spring.
+- **DTO** com `records` Java imutáveis (`FlashcardRequest`, `FlashcardDTO`).
+- **Repository** (Spring Data JPA) — interfaces sem implementação manual.
+- **Strategy** — `IAService` abstrai o provedor (demo / Anthropic / Gemini) sem
+  acoplar a regra de negócio a um fornecedor específico.
+- **Service Layer transacional** — `@Transactional(readOnly = true)` por padrão,
+  escrita explícita onde há persistência.
+- **Configuration Properties** — `IAProperties` (`@ConfigurationProperties("studyai.ia")`).
+- **Migrations versionadas** — Flyway (nunca editar uma migration já aplicada).
+
+### Pacotes (`br.ufpb.dsc.studyai`)
+| Pacote | Responsabilidade |
+|--------|------------------|
+| `config/` | `SecurityConfig`, `IAProperties`, `GlobalModelAttributes` |
+| `controller/` | Recebem requisições HTTP/HTMX e devolvem views/fragmentos |
+| `domain/` | Entidades JPA (`Deck`, `Flashcard`) |
+| `dto/` | Records de entrada/saída |
+| `exception/` | Exceções de domínio (`IAIndisponivelException`) |
+| `repository/` | Interfaces Spring Data JPA |
+| `service/` | Lógica de negócio + integração com IA |
+
+---
+
+## 📂 Estrutura do projeto
+
 ```
-
-**Verificar:**
-```bash
-mvn -version
-# Esperado: Apache Maven 3.x.x
+projeto-eq11/
+├── docker-compose.yml              # Orquestração ÚNICA (banco + app + perfis dev/scan)
+├── Dockerfile                      # (em docker/) build multi-stage de produção
+├── .env / .env.example             # Variáveis (DB_*, APP_IMAGE) — .env é gitignored
+├── pom.xml
+├── .github/workflows/deploy.yml    # Pipeline CI/CD (build → push GHCR → deploy)
+├── docker/
+│   └── Dockerfile
+├── src/main/java/br/ufpb/dsc/studyai/
+│   ├── StudyAiApplication.java     # Classe principal (@SpringBootApplication)
+│   ├── config/                     # SecurityConfig, IAProperties, GlobalModelAttributes
+│   ├── controller/                 # Home, Flashcard, Auth
+│   ├── domain/                     # Deck, Flashcard
+│   ├── dto/                        # FlashcardRequest, FlashcardDTO (records)
+│   ├── exception/                  # IAIndisponivelException
+│   ├── repository/                 # DeckRepository, FlashcardRepository
+│   └── service/                    # IAService, IAServiceImpl, FlashcardService
+├── src/main/resources/
+│   ├── application.yml             # Config base + studyai.ia.*
+│   ├── application-dev.yml         # Perfil local (mvn spring-boot:run)
+│   ├── application-prod.yml        # Perfil container (lê DB_*)
+│   ├── db/migration/               # V1__, V2__deck_flashcard, V3__drop_produto
+│   ├── static/                     # css/studyai.css, js/studyai.js
+│   └── templates/                  # auth/login + studyai/{layout,home,flashcards,fragments}
+└── docs/                           # PITCH, SECURITY, CONVENTIONS, arquitetura
 ```
 
 ---
 
-### Passo 3 — Instale o Docker Desktop
+## ▶ Como executar
 
-O Docker sobe o banco de dados PostgreSQL sem precisar instalar nada manualmente.
+### Pré-requisitos
+- **Java 21** (Eclipse Temurin recomendado) · **Maven 3.9+** · **Docker Desktop** (em execução).
 
-1. Acesse https://www.docker.com/products/docker-desktop/
-2. Baixe e instale o Docker Desktop para seu sistema
-3. Abra o Docker Desktop e aguarde ele inicializar (ícone na barra de tarefas)
-
-**Verificar:**
+### Opção A — Tudo em containers (recomendado para demonstração)
+Um único comando sobe o **banco + aplicação**:
 ```bash
-docker -v
-# Esperado: Docker version 27.x.x ...
+docker compose up -d --build
 ```
+A aplicação fica disponível em **http://127.0.0.1:8111** (porta padronizada da equipe).
 
-> **Importante:** o Docker Desktop deve estar **em execução** sempre que você for rodar o projeto.
-
----
-
-### Passo 4 — Clone o repositório
-
+### Opção B — Banco no Docker + app local (recomendado para desenvolvimento)
 ```bash
-git clone <URL-DO-REPOSITÓRIO>
-cd base_projeto
-```
-
-> Substitua `<URL-DO-REPOSITÓRIO>` pela URL fornecida pelo professor.
-
----
-
-### Passo 5 — Execute o projeto
-
-Você tem duas opções. **Recomendamos a Opção A para a primeira execução.**
-
-#### Opção A: Tudo com Docker (mais simples)
-
-Um único comando sobe o banco, a aplicação e o Adminer (interface web do banco):
-
-```bash
-docker compose -f docker/docker-compose.dev.yml up --build
-```
-
-Aguarde as mensagens de inicialização. Quando aparecer algo como:
-```
-Started StudyAIApplication in X.XXX seconds
-```
-...a aplicação está pronta.
-
-#### Opção B: Banco no Docker + aplicação local (recomendado para desenvolvimento)
-
-Esta opção permite editar o código e ver as mudanças mais rápido:
-
-```bash
-# Terminal 1 — sobe o banco de dados
-docker compose -f docker/docker-compose.dev.yml up postgres adminer
-
-# Terminal 2 — roda a aplicação (em outro terminal, na mesma pasta)
+# Sobe só o banco
+docker compose up -d postgres
+# Roda a aplicação localmente (perfil dev, hot-reload)
 mvn spring-boot:run
 ```
+Nesse modo a app responde em **http://localhost:8080**.
 
----
-
-### Passo 6 — Acesse no browser
-
-| O que | Endereço |
-|-------|----------|
-| Aplicação | http://localhost:8080 |
-| Login | usuário: `admin` / senha: `admin123` |
-| Adminer (banco) | http://localhost:8888 |
-| Health check | http://localhost:8080/actuator/health |
-
----
-
-### Parando o projeto
-
+### Perfis opcionais do Compose
 ```bash
-# Parar a aplicação: Ctrl+C no terminal onde está rodando
+# Adminer (interface web do banco) em http://127.0.0.1:8112
+docker compose --profile dev up -d adminer
 
-# Parar os containers Docker:
-docker compose -f docker/docker-compose.dev.yml down
+# Trivy (scan de vulnerabilidades no filesystem)
+docker compose --profile scan up trivy
 ```
 
----
-
-## Solução de Problemas Comuns
-
-### "Port 8080 already in use"
-Outra aplicação está usando a porta 8080. Para liberar:
+### Parar
 ```bash
-# macOS / Linux
-lsof -ti:8080 | xargs kill
-
-# Windows (PowerShell)
-netstat -ano | findstr :8080
-# Anote o PID da última coluna e execute:
-taskkill /PID <número-do-pid> /F
+docker compose down          # para (mantém os dados)
+docker compose down -v       # para e APAGA os dados do banco
 ```
 
-### "Cannot connect to the Docker daemon"
-O Docker Desktop não está em execução. Abra o aplicativo Docker Desktop e aguarde inicializar.
+---
 
-### "Connection refused" ao banco de dados
-O container do PostgreSQL ainda não subiu. Aguarde alguns segundos e tente novamente. Você pode verificar com:
+## 🔑 Acesso e portas
+
+| Recurso | Em container (Compose) | Local (`mvn spring-boot:run`) |
+|---------|------------------------|-------------------------------|
+| Aplicação | http://127.0.0.1:8111 | http://localhost:8080 |
+| Login | `admin` / `admin123` | `admin` / `admin123` |
+| Adminer (perfil `dev`) | http://127.0.0.1:8112 | — |
+| Health check | `…:8111/actuator/health` | `…:8080/actuator/health` |
+
+---
+
+## 🗄 Banco de dados e migrations
+
+- **PostgreSQL 16**, schema 100% controlado por **Flyway** (`ddl-auto: validate` — o
+  Hibernate **nunca** altera o banco).
+- Credenciais via variáveis `DB_*` (arquivo `.env`), com defaults `eq11` para rodar sem `.env`.
+
+| Migration | Descrição |
+|-----------|-----------|
+| `V1__criar_tabela_produto.sql` | Tabela de exemplo do boilerplate (legado) |
+| `V2__deck_flashcard.sql` | Tabelas `deck` e `flashcard` (módulo FlashIA) |
+| `V3__drop_produto.sql` | Remove a tabela `produto` (não usada pelo StudyAI) |
+
+> ⚠️ **Nunca edite uma migration já aplicada** — o Flyway valida o checksum. Para
+> mudar o schema, crie uma nova (`V4__...sql`).
+
+---
+
+## ✅ Testes
 ```bash
-docker compose -f docker/docker-compose.dev.yml ps
-# O container "studyai-postgres-dev" deve estar com status "healthy"
+mvn test       # testes (requer Docker — usa Testcontainers para um PostgreSQL real)
+mvn verify     # testes + relatório de cobertura JaCoCo (target/site/jacoco/index.html)
 ```
 
-### Erro de compilação Java
-Verifique se o Java 21 está sendo usado pelo Maven:
+---
+
+## 🔒 Segurança (SAST)
 ```bash
-mvn -version
-# A linha "Java version:" deve mostrar 21.x.x
+mvn verify -Psecurity                       # SpotBugs + FindSecBugs + OWASP Dependency-Check
+docker compose --profile scan up trivy      # Trivy (filesystem)
+mvn versions:display-dependency-updates -Pversions   # dependências desatualizadas
 ```
-Se mostrar outra versão, configure a variável `JAVA_HOME` apontando para o Java 21.
-
-### Flyway: "Found non-empty schema(s) with no schema history table"
-O banco existe mas foi criado sem as migrations. Apague os dados e recomece:
-```bash
-docker compose -f docker/docker-compose.dev.yml down -v
-docker compose -f docker/docker-compose.dev.yml up postgres
-```
+Boas práticas já aplicadas: CSRF ativo (inclusive nos POSTs HTMX, via header + meta tag),
+nenhum segredo versionado, senhas com BCrypt, chave de IA somente em variável de ambiente.
+Detalhes em [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ---
 
-## Testes
+## 🚀 CI/CD e Deploy
 
-```bash
-# Rodar todos os testes (requer Docker em execução — usa Testcontainers)
-mvn test
+O pipeline ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) roda a cada
+`push` na `main`:
 
-# Rodar com relatório de cobertura (JaCoCo)
-mvn verify
-# Relatório: abra o arquivo target/site/jacoco/index.html no browser
-```
+1. **Build & push** — constrói a imagem com [`docker/Dockerfile`](docker/Dockerfile) e
+   publica em `ghcr.io/des-sist-corp-ufpb/projeto-eq11:latest`.
+2. **Deploy** — via SSH no servidor da disciplina (`dsc.rodrigor.com`), que puxa a
+   imagem e sobe o `docker-compose.yml`.
 
----
+### Configuração necessária
+- **Secrets no GitHub:** `SSH_DEPLOY_KEY`, `SSH_USERNAME` (o `GITHUB_TOKEN` é automático).
+- **`.env` no servidor** (gitignored, contém segredos):
+  ```env
+  APP_IMAGE=ghcr.io/des-sist-corp-ufpb/projeto-eq11:latest
+  DB_HOST=postgres
+  DB_PORT=5432
+  DB_NAME=eq11
+  DB_USER=eq11
+  DB_PASSWORD=<senha-forte>
+  ```
+  > Regra de formatação: **sem espaços** ao redor do `=`.
 
-## Análise de Segurança (SAST)
-
-```bash
-# SpotBugs + FindSecBugs + OWASP Dependency Check
-mvn verify -Psecurity
-
-# Trivy: scan de vulnerabilidades no filesystem
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
-
-# Verificar dependências desatualizadas
-mvn versions:display-dependency-updates -Pversions
-```
-
-Veja `docs/SECURITY.md` para detalhes.
+A aplicação publicada responde em `127.0.0.1:8111` no servidor (atrás do proxy reverso da disciplina).
 
 ---
 
-## Configurando o Deploy Automático (GitHub Actions)
+## 📐 Convenções de código
+- Domínio, endpoints e comentários em **português**.
+- **DTOs como `records`** (imutáveis).
+- `@Transactional(readOnly = true)` em métodos de consulta.
+- **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`.
+- Migrations Flyway versionadas — nunca editar as já aplicadas.
 
-O projeto inclui um pipeline de CI/CD em `.github/workflows/deploy.yml` que:
-- roda os testes automaticamente a cada `push` na branch `main`
-- executa análise de segurança (SAST) no código e nas dependências
-- constrói a imagem Docker de produção e faz o deploy no servidor da disciplina
-
-Para ativar o deploy, você precisa configurar **dois secrets** e uma **variável** no seu repositório GitHub.
-
----
-
-### Secret 1 — Chave SSH de deploy (`SSH_DEPLOY_KEY`)
-
-O servidor da disciplina (`dsc.rodrigor.com`) já está preparado para receber deploys.
-A chave SSH que autoriza o acesso está disponível na página da disciplina:
-
-**Acesse: https://gd.dsc.rodrigor.com** e copie a chave SSH privada disponibilizada pelo professor.
-
-Depois, adicione no seu repositório:
-
-1. No GitHub, acesse seu repositório → **Settings**
-2. No menu lateral: **Secrets and variables → Actions**
-3. Clique em **New repository secret**
-4. Nome: `SSH_DEPLOY_KEY`
-5. Valor: cole a chave privada copiada do portal (o texto completo, incluindo as linhas `-----BEGIN...` e `-----END...`)
-6. Clique em **Add secret**
+Detalhes em [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).
 
 ---
 
-### Secret 2 — Chave da API do NVD (`NVD_API_KEY`)
+## 🩺 Solução de problemas
 
-#### O que é o NVD?
-
-**NVD** significa *National Vulnerability Database* — é o banco de dados oficial do governo americano (NIST) que cataloga todas as vulnerabilidades de segurança conhecidas em softwares. Cada vulnerabilidade recebe um identificador chamado **CVE** (ex.: CVE-2024-12345) e uma nota de gravidade chamada **CVSS** (de 0 a 10).
-
-O **OWASP Dependency Check** (uma das ferramentas de segurança do projeto) consulta esse banco para verificar se as bibliotecas que o seu projeto usa possuem vulnerabilidades conhecidas.
-
-#### Por que preciso de uma chave?
-
-Sem a chave, o download do banco de dados NVD é muito lento (pode levar 20+ minutos no CI/CD, ou até falhar por timeout). Com a chave gratuita, o download é feito via API e leva menos de 2 minutos.
-
-#### Como obter (gratuito, leva ~1 minuto)
-
-1. Acesse https://nvd.nist.gov/developers/request-an-api-key
-2. Preencha seu e-mail institucional (use o e-mail da UFPB se possível)
-3. Marque a caixa de uso não-comercial
-4. Clique em **Submit**
-5. Acesse seu e-mail — você receberá a chave em segundos
-
-#### Adicionando ao repositório
-
-1. No GitHub: **Settings → Secrets and variables → Actions**
-2. Clique em **New repository secret**
-3. Nome: `NVD_API_KEY`
-4. Valor: cole a chave recebida por e-mail
-5. Clique em **Add secret**
-
-> **Sem a chave ainda?** O pipeline funciona mesmo sem ela, mas o OWASP Dependency Check
-> pode demorar muito ou falhar por timeout. Configure assim que possível.
+| Sintoma | Causa / Solução |
+|---------|-----------------|
+| `Port 8111 already in use` | Outra instância rodando. Pare com `docker compose down` ou libere a porta. |
+| `Cannot connect to the Docker daemon` | Docker Desktop não está em execução — abra e aguarde inicializar. |
+| `Connection refused` ao banco | Postgres ainda subindo. Verifique `docker compose ps` (container `eq11-postgres` deve estar `healthy`). |
+| Erro de compilação Java | Confirme `mvn -version` mostrando **Java 21**; ajuste `JAVA_HOME` se necessário. |
+| Flyway: *non-empty schema with no history* | Banco criado sem as migrations. Recrie: `docker compose down -v && docker compose up -d`. |
+| App não conecta após trocar o `.env` | Recrie o volume do banco: `docker compose down -v && docker compose up -d`. |
 
 ---
 
-### Variável — Nome da imagem Docker (`APP_IMAGE`)
-
-O pipeline publica a imagem Docker no GitHub Container Registry (GHCR) com o nome do seu repositório. Você não precisa configurar isso manualmente — o workflow usa `${{ github.repository }}` para montar o nome automaticamente.
-
-Mas o arquivo `.env` no servidor precisa saber qual imagem usar. O script de deploy atualiza isso automaticamente na primeira execução.
-
----
-
-### Verificando se o deploy funcionou
-
-Após configurar os secrets e fazer um `push` na branch `main`:
-
-1. No GitHub, clique na aba **Actions**
-2. Você verá o workflow **"Build & Deploy"** em execução
-3. Ele tem 3 etapas: **Testes e SAST → Build e push → Deploy em produção**
-4. Se tudo der certo, a aplicação estará disponível em `https://dsc.rodrigor.com`
-
-Se alguma etapa falhar, clique nela para ver os logs detalhados.
-
----
-
-## Estrutura do Projeto
-
-```
-base_projeto/
-├── .github/workflows/
-│   └── deploy.yml           # Pipeline CI/CD (GitHub Actions)
-├── src/main/java/br/ufpb/dsc/studyai/
-│   ├── config/              # Configurações (Security, GlobalModelAttributes, etc.)
-│   ├── controller/          # Controllers HTTP + HTMX
-│   ├── domain/              # Entidades JPA
-│   ├── dto/                 # Data Transfer Objects (Records)
-│   ├── exception/           # Exceções de domínio
-│   ├── repository/          # Interfaces Spring Data JPA
-│   └── service/             # Lógica de negócio
-├── src/main/resources/
-│   ├── db/migration/        # Scripts Flyway (V1__, V2__, ...)
-│   └── templates/           # Templates Thymeleaf
-├── docker/                  # Dockerfiles + docker-compose
-├── docs/                    # Documentação técnica
-├── CLAUDE.md                # Memória para Claude Code
-└── pom.xml
-```
-
----
-
-## Para Alunos: Adaptando o Boilerplate
-
-1. **Renomear** a entidade `Produto` para sua entidade principal
-2. **Criar migration** Flyway com a nova estrutura da tabela (`src/main/resources/db/migration/V2__...sql`)
-3. **Atualizar** Repository, Service, Controller e templates seguindo os mesmos padrões
-4. **Manter** a estrutura de pacotes e convenções (ver `docs/CONVENTIONS.md`)
-5. **Nunca editar** migrations já aplicadas — sempre criar uma nova (`V3__`, `V4__`, ...)
-
-> Dúvidas? Consulte a documentação em `docs/` ou o professor.
+> **StudyAI BR** — Equipe eq11 · Desenvolvimento de Sistemas Corporativos · UFPB Campus IV

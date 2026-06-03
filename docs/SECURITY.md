@@ -37,7 +37,7 @@ semgrep --config=p/java src/ --severity WARNING
 
 ```bash
 # Scan do filesystem (dependências, segredos vazados)
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
+docker compose --profile scan up trivy
 
 # Scan da imagem Docker de produção
 docker build -f docker/Dockerfile -t studyai:latest .

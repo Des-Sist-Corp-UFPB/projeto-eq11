@@ -1,8 +1,11 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/studyai_dev
-    username: studyai
-    password: studyai123
+    # Mesma convenção DB_* do docker-compose.yml. Defaults pensados para rodar a app
+    # LOCALMENTE com `mvn spring-boot:run` contra o Postgres do compose
+    # (DB_HOST=localhost). Sem variáveis definidas, usa eq11/eq11.
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:eq11}
+    username: ${DB_USER:eq11}
+    password: ${DB_PASSWORD:eq11}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

@@ -1,8 +1,11 @@
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/eq11
-    username: eq11
-    password: GQoUcAKjrXsDgdsO8Tjf
+    # Em produção as credenciais vêm de variáveis de ambiente (arquivo .env injetado
+    # pelo docker-compose.yml) — NUNCA hardcode segredos neste arquivo, que é
+    # versionado no git. A URL é montada a partir de DB_HOST/DB_PORT/DB_NAME.
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

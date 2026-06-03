@@ -37,10 +37,10 @@ br.ufpb.dsc.studyai
 ### Desenvolvimento
 ```bash
 # Subir ambiente completo (banco + app + adminer)
-docker compose -f docker/docker-compose.dev.yml up
+docker compose up
 
 # Só o banco (para rodar a app localmente com mvn)
-docker compose -f docker/docker-compose.dev.yml up postgres adminer
+docker compose --profile dev up -d postgres adminer
 
 # Rodar aplicação local (perfil dev)
 mvn spring-boot:run
@@ -64,7 +64,7 @@ mvn verify -Psecurity
 mvn versions:display-dependency-updates -Pversions
 
 # Trivy local (scan filesystem)
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
+docker compose --profile scan up trivy
 
 # Trivy scan da imagem (depois de fazer o build)
 docker build -f docker/Dockerfile -t studyai:latest .
@@ -77,7 +77,7 @@ docker run --rm aquasec/trivy image studyai:latest
 docker build -f docker/Dockerfile -t studyai:latest .
 
 # Subir produção (requer .env configurado)
-docker compose -f docker/docker-compose.prod.yml up -d
+docker compose up -d
 ```
 
 ## Acesso Local
