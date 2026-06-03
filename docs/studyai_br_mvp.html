@@ -1,0 +1,1336 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyAI BR</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0a0a0f;
+--bg2:#111118;
+--bg3:#1a1a24;
+--bg4:#22222e;
+--surface:#1e1e2a;
+--surface2:#252533;
+--border:#2e2e3e;
+--border2:#3a3a50;
+--text:#f0f0f8;
+--text2:#9090b0;
+--text3:#5a5a78;
+--accent:#6c63ff;
+--accent2:#8b82ff;
+--accent-glow:rgba(108,99,255,0.15);
+--green:#22c55e;
+--green-bg:rgba(34,197,94,0.1);
+--amber:#f59e0b;
+--amber-bg:rgba(245,158,11,0.1);
+--red:#ef4444;
+--red-bg:rgba(239,68,68,0.1);
+--blue:#3b82f6;
+--blue-bg:rgba(59,130,246,0.1);
+--r:12px;
+--r2:8px;
+--r3:20px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+
+/* GRAIN OVERLAY */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.4}
+
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.logo{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.logo-mark{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.logo-mark span{color:var(--accent)}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:2px;letter-spacing:0.05em;text-transform:uppercase}
+nav{padding:16px 12px;flex:1}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);padding:0 8px;margin-bottom:6px;margin-top:16px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r2);cursor:pointer;font-size:13.5px;color:var(--text2);transition:all 0.15s;margin-bottom:2px;font-family:'DM Sans',sans-serif;font-weight:400}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--accent-glow);color:var(--accent2);font-weight:500}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:0.8}
+.nav-item.active svg{opacity:1}
+.sidebar-footer{padding:16px 12px;border-top:1px solid var(--border)}
+.plan-badge{background:var(--accent-glow);border:1px solid rgba(108,99,255,0.3);border-radius:var(--r2);padding:10px 12px}
+.plan-name{font-size:11px;font-weight:600;color:var(--accent2);letter-spacing:0.05em;text-transform:uppercase}
+.plan-limit{font-size:12px;color:var(--text3);margin-top:3px}
+.upgrade-btn{margin-top:8px;width:100%;padding:7px;background:var(--accent);color:#fff;border:none;border-radius:var(--r2);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;transition:opacity 0.15s}
+.upgrade-btn:hover{opacity:0.85}
+
+/* MAIN */
+.main{margin-left:220px;min-height:100vh;padding:32px 36px}
+.page{display:none}
+.page.active{display:block}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:32px}
+.page-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin-bottom:6px}
+.page-desc{font-size:14px;color:var(--text2);line-height:1.6;max-width:520px}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+.card+.card{margin-top:16px}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text);letter-spacing:0.02em}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* STAT CARDS */
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;opacity:0.06;transform:translate(20px,-20px)}
+.stat-card.flash::before{background:var(--accent)}
+.stat-card.corr::before{background:var(--green)}
+.stat-card.prev::before{background:var(--amber)}
+.stat-card.streak::before{background:var(--red)}
+.stat-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.stat-value{font-family:'Syne',sans-serif;font-size:28px;font-weight:700}
+.stat-value.flash-col{color:var(--accent2)}
+.stat-value.green-col{color:var(--green)}
+.stat-value.amber-col{color:var(--amber)}
+.stat-value.red-col{color:var(--red)}
+.stat-sub{font-size:12px;color:var(--text3);margin-top:4px}
+
+/* INPUTS */
+textarea,input,select{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.15s}
+textarea{width:100%;padding:14px 16px;resize:vertical;min-height:120px;line-height:1.6}
+input[type=text],input[type=number]{width:100%;padding:10px 14px;height:40px}
+select{padding:8px 12px;height:38px;cursor:pointer}
+textarea:focus,input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+::placeholder{color:var(--text3)}
+label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:6px;letter-spacing:0.02em}
+.form-group{margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--r2);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;letter-spacing:0.02em}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#7a72ff}
+.btn-primary:disabled{background:var(--bg4);color:var(--text3);cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+.btn-ghost{background:transparent;color:var(--text2);padding:6px 12px;font-size:12px}
+.btn-ghost:hover{color:var(--text);background:var(--bg3)}
+.btn-sm{padding:7px 14px;font-size:12px}
+
+/* TAGS / BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.04em}
+.badge-purple{background:var(--accent-glow);color:var(--accent2);border:1px solid rgba(108,99,255,0.3)}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.badge-blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(59,130,246,0.2)}
+
+/* DIVIDER */
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* FLASHCARD AREA */
+.flashcard-scene{perspective:1000px;width:100%;height:220px;cursor:pointer;margin:16px 0}
+.flashcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s cubic-bezier(0.4,0,0.2,1)}
+.flashcard.flipped{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center}
+.fc-face.back{transform:rotateY(180deg);background:var(--bg3)}
+.fc-label{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.fc-text{font-size:16px;line-height:1.6;color:var(--text);font-family:'DM Sans',sans-serif}
+.fc-back-text{font-size:14px;line-height:1.7;color:var(--text2)}
+
+/* FLASHCARD NAV */
+.fc-nav{display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.fc-counter{font-size:13px;color:var(--text3);font-family:'Syne',sans-serif;font-weight:600}
+.fc-progress{flex:1;height:3px;background:var(--bg4);border-radius:4px;margin:0 16px;overflow:hidden}
+.fc-progress-bar{height:100%;background:var(--accent);border-radius:4px;transition:width 0.3s}
+
+/* COMPETENCIAS */
+.comp-grid{display:grid;gap:10px;margin-top:16px}
+.comp-row{display:flex;align-items:center;gap:12px}
+.comp-label{font-size:12px;color:var(--text2);width:100px;flex-shrink:0;font-family:'Syne',sans-serif;font-weight:500}
+.comp-bar-wrap{flex:1;height:6px;background:var(--bg4);border-radius:4px;overflow:hidden}
+.comp-bar{height:100%;border-radius:4px;transition:width 1s cubic-bezier(0.4,0,0.2,1)}
+.comp-score{font-size:13px;font-weight:600;font-family:'Syne',sans-serif;width:40px;text-align:right;color:var(--text)}
+
+/* TEMA CARDS */
+.tema-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:relative;overflow:hidden;margin-bottom:12px}
+.tema-rank{position:absolute;top:16px;right:16px;font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:var(--border2);line-height:1}
+.tema-eixo{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.tema-titulo{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;padding-right:48px}
+.tema-just{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px}
+.prob-bar-wrap{height:4px;background:var(--bg4);border-radius:4px;overflow:hidden;margin-top:8px}
+.prob-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.prob-label{font-size:11px;color:var(--text3);margin-top:6px}
+
+/* DECK LIST */
+.deck-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;display:flex;align-items:center;gap:16px;margin-bottom:10px;cursor:pointer;transition:border-color 0.15s}
+.deck-item:hover{border-color:var(--border2)}
+.deck-icon{width:40px;height:40px;background:var(--accent-glow);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.deck-info{flex:1}
+.deck-name{font-size:14px;font-weight:500;margin-bottom:3px;font-family:'Syne',sans-serif}
+.deck-meta{font-size:12px;color:var(--text3)}
+.deck-count{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--accent2)}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:3px;margin-bottom:20px;width:fit-content}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all 0.15s;font-family:'Syne',sans-serif;font-weight:500}
+.tab.active{background:var(--accent);color:#fff}
+.tab:not(.active):hover{color:var(--text);background:var(--bg4)}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;padding:48px;gap:16px}
+.spinner{width:36px;height:36px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:var(--text2);font-family:'Syne',sans-serif}
+.loading-dots::after{content:'...';animation:dots 1.2s steps(4,end) infinite}
+@keyframes dots{0%,25%{content:'.'}50%{content:'..'}75%,100%{content:'...'}}
+
+/* RESULT SECTION */
+.result-section{animation:fadeUp 0.4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* NOTE SCORE */
+.score-display{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.score-big{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;line-height:1}
+.score-max{font-size:18px;color:var(--text3);font-family:'Syne',sans-serif}
+
+/* DASHBOARD HOME */
+.welcome-banner{background:linear-gradient(135deg,var(--surface) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:var(--r);padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden}
+.welcome-banner::after{content:'';position:absolute;top:-60px;right:-40px;width:200px;height:200px;background:var(--accent);opacity:0.04;border-radius:50%}
+.welcome-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px}
+.welcome-sub{font-size:14px;color:var(--text2);line-height:1.5}
+.streak-row{display:flex;align-items:center;gap:8px;margin-top:16px}
+.streak-icon{font-size:20px}
+.streak-text{font-size:13px;color:var(--text2)}
+.streak-num{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--amber)}
+
+/* QUICK ACTIONS */
+.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.quick-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;cursor:pointer;transition:all 0.2s;text-decoration:none;display:block}
+.quick-card:hover{border-color:var(--accent);transform:translateY(-2px);background:var(--surface2)}
+.quick-icon{width:40px;height:40px;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.quick-label{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;margin-bottom:4px}
+.quick-desc{font-size:12px;color:var(--text3);line-height:1.5}
+
+/* ALERT / FEEDBACK BOX */
+.feedback-box{background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 var(--r2) var(--r2) 0;padding:14px 16px;margin-bottom:10px}
+.feedback-title{font-size:12px;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+.feedback-text{font-size:13px;color:var(--text2);line-height:1.6}
+.feedback-box.green{border-color:var(--green)}
+.feedback-box.green .feedback-title{color:var(--green)}
+.feedback-box.amber{border-color:var(--amber)}
+.feedback-box.amber .feedback-title{color:var(--amber)}
+.feedback-box.red{border-color:var(--red)}
+.feedback-box.red .feedback-title{color:var(--red)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center}
+.empty-icon{font-size:48px;margin-bottom:16px;opacity:0.4}
+.empty-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:600;margin-bottom:6px}
+.empty-desc{font-size:13px;color:var(--text3);max-width:280px;line-height:1.6}
+
+/* CORRECTION HISTORY */
+.hist-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:8px}
+.hist-score{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;min-width:52px}
+.hist-info{flex:1}
+.hist-type{font-size:12px;font-weight:500;color:var(--text3);margin-bottom:2px}
+.hist-date{font-size:11px;color:var(--text3)}
+.hist-preview{font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+
+/* UPLOAD AREA */
+.upload-area{border:2px dashed var(--border);border-radius:var(--r);padding:36px;text-align:center;cursor:pointer;transition:all 0.2s;background:transparent}
+.upload-area:hover,.upload-area.drag{border-color:var(--accent);background:var(--accent-glow)}
+.upload-icon{font-size:32px;margin-bottom:10px;opacity:0.5}
+.upload-text{font-size:14px;color:var(--text2);margin-bottom:4px}
+.upload-hint{font-size:12px;color:var(--text3)}
+
+/* TOOLTIP */
+.tooltip-wrap{position:relative;display:inline-flex}
+.tooltip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r2);padding:6px 10px;font-size:11px;color:var(--text2);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.15s;z-index:200}
+.tooltip-wrap:hover .tooltip{opacity:1}
+
+/* WORD COUNT */
+.wc{font-size:11px;color:var(--text3);text-align:right;margin-top:4px}
+
+/* SEPARATOR TEXT */
+.sep-text{text-align:center;font-size:12px;color:var(--text3);margin:16px 0;position:relative}
+.sep-text::before,.sep-text::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:var(--border)}
+.sep-text::before{left:0}
+.sep-text::after{right:0}
+
+/* SCROLLABLE RESULTS */
+.results-scroll{max-height:520px;overflow-y:auto;padding-right:4px}
+
+/* CHIP LIST */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{padding:5px 12px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--text2);cursor:pointer;transition:all 0.15s}
+.chip:hover,.chip.selected{background:var(--accent-glow);border-color:rgba(108,99,255,0.4);color:var(--accent2)}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">Study<span>AI</span></div>
+    <div class="logo-sub">Concursos & ENEM</div>
+  </div>
+  <nav>
+    <div class="nav-section">Menu</div>
+    <div class="nav-item active" onclick="navigate('home')">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+      Início
+    </div>
+    <div class="nav-section">Módulos</div>
+    <div class="nav-item" onclick="navigate('flashcards')">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.396 0 2.7.39 3.8 1.064A7.97 7.97 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
+      FlashIA
+    </div>
+    <div class="nav-item" onclick="navigate('corrigir')">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+      CorretorIA
+    </div>
+    <div class="nav-item" onclick="navigate('previsao')">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+      PrevêTema
+    </div>
+    <div class="nav-section">Conta</div>
+    <div class="nav-item" onclick="navigate('historico')">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+      Histórico
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="plan-badge">
+      <div class="plan-name">Plano Gratuito</div>
+      <div class="plan-limit">30 flashcards · 2 correções</div>
+      <button class="upgrade-btn" onclick="alert('Integração com Kiwify — configure sua API Key para habilitar pagamentos.')">Fazer Upgrade →</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ═══════════════════ HOME ═══════════════════ -->
+<div class="page active" id="page-home">
+  <div class="welcome-banner">
+    <div class="welcome-name">Bom dia, Concurseiro 👋</div>
+    <div class="welcome-sub">Você está a um passo de dominar o conteúdo. O que vamos estudar hoje?</div>
+    <div class="streak-row">
+      <span class="streak-icon">🔥</span>
+      <span class="streak-text">Sequência de estudos:</span>
+      <span class="streak-num">7 dias seguidos</span>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:28px">
+    <div class="stat-card flash">
+      <div class="stat-label">Flashcards gerados</div>
+      <div class="stat-value flash-col" id="stat-flash">0</div>
+      <div class="stat-sub">de 30 disponíveis</div>
+    </div>
+    <div class="stat-card corr">
+      <div class="stat-label">Correções feitas</div>
+      <div class="stat-value green-col" id="stat-corr">0</div>
+      <div class="stat-sub">de 2 disponíveis</div>
+    </div>
+    <div class="stat-card prev">
+      <div class="stat-label">Previsões geradas</div>
+      <div class="stat-value amber-col" id="stat-prev">0</div>
+      <div class="stat-sub">de 1 disponível</div>
+    </div>
+  </div>
+
+  <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Acesso rápido</div>
+  <div class="quick-grid">
+    <div class="quick-card" onclick="navigate('flashcards')">
+      <div class="quick-icon" style="background:var(--accent-glow)">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="var(--accent2)"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.396 0 2.7.39 3.8 1.064A7.97 7.97 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
+      </div>
+      <div class="quick-label">Gerar Flashcards</div>
+      <div class="quick-desc">Cole um resumo ou texto e transforme em cartões de memorização</div>
+    </div>
+    <div class="quick-card" onclick="navigate('corrigir')">
+      <div class="quick-icon" style="background:var(--green-bg)">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="var(--green)"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+      </div>
+      <div class="quick-label">Corrigir Redação</div>
+      <div class="quick-desc">ENEM (5 competências), Cebraspe discursiva ou peça OAB</div>
+    </div>
+    <div class="quick-card" onclick="navigate('previsao')">
+      <div class="quick-icon" style="background:var(--amber-bg)">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="var(--amber)"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+      </div>
+      <div class="quick-label">Prever Temas</div>
+      <div class="quick-desc">IA analisa o histórico e projeta os temas mais prováveis do ENEM</div>
+    </div>
+  </div>
+
+  <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Seus decks recentes</div>
+  <div id="home-decks">
+    <div class="empty">
+      <div class="empty-icon">📚</div>
+      <div class="empty-title">Nenhum deck ainda</div>
+      <div class="empty-desc">Gere seus primeiros flashcards no módulo FlashIA</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ FLASHCARDS ═══════════════════ -->
+<div class="page" id="page-flashcards">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div class="page-title">FlashIA</div>
+      <div class="badge badge-purple">Módulo 1</div>
+    </div>
+    <div class="page-desc">Cole um texto, resumo ou trecho de lei e gere flashcards otimizados para memorização ativa em concursos e ENEM.</div>
+  </div>
+
+  <div class="grid-2" style="align-items:start">
+    <!-- INPUT -->
+    <div>
+      <div class="card">
+        <div class="card-title">Configuração</div>
+        <div class="form-group">
+          <label>Banca / Prova</label>
+          <div class="chips" id="banca-chips">
+            <div class="chip selected" onclick="selectChip(this,'banca')">Geral</div>
+            <div class="chip" onclick="selectChip(this,'banca')">ENEM</div>
+            <div class="chip" onclick="selectChip(this,'banca')">Cebraspe</div>
+            <div class="chip" onclick="selectChip(this,'banca')">FGV</div>
+            <div class="chip" onclick="selectChip(this,'banca')">FCC</div>
+            <div class="chip" onclick="selectChip(this,'banca')">Vunesp</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Disciplina</label>
+            <select id="flash-disciplina">
+              <option value="">Qualquer área</option>
+              <option>Direito Constitucional</option>
+              <option>Direito Administrativo</option>
+              <option>Português</option>
+              <option>Matemática</option>
+              <option>Raciocínio Lógico</option>
+              <option>Informática</option>
+              <option>Administração Pública</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Qtd. de flashcards</label>
+            <select id="flash-qtd">
+              <option value="10">10 cartões</option>
+              <option value="15" selected>15 cartões</option>
+              <option value="20">20 cartões</option>
+              <option value="25">25 cartões</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Conteúdo para gerar flashcards</label>
+          <textarea id="flash-texto" placeholder="Cole aqui o texto do seu resumo, trecho de lei, artigo ou qualquer conteúdo que deseja memorizar..." rows="8" oninput="updateWC(this,'flash-wc')"></textarea>
+          <div class="wc" id="flash-wc">0 palavras</div>
+        </div>
+        <button class="btn btn-primary" onclick="gerarFlashcards()" id="btn-gerar" style="width:100%;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+          Gerar Flashcards com IA
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="flash-resultado">
+      <div class="card" style="min-height:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+        <div style="font-size:40px;opacity:0.2">🃏</div>
+        <div style="font-size:14px;color:var(--text3);font-family:'Syne',sans-serif">Seus flashcards aparecerão aqui</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ CORRIGIR ═══════════════════ -->
+<div class="page" id="page-corrigir">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div class="page-title">CorretorIA</div>
+      <div class="badge badge-green">Módulo 2</div>
+    </div>
+    <div class="page-desc">Corrija redações ENEM pelas 5 competências INEP, discursivas Cebraspe ou peças OAB com feedback detalhado.</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="setTab('enem',this)">Redação ENEM</div>
+    <div class="tab" onclick="setTab('discursiva',this)">Discursiva</div>
+    <div class="tab" onclick="setTab('oab',this)">Peça OAB</div>
+  </div>
+
+  <!-- ENEM -->
+  <div id="tab-enem">
+    <div class="grid-2" style="align-items:start">
+      <div>
+        <div class="card">
+          <div class="card-title">Dados da redação</div>
+          <div class="form-group">
+            <label>Tema da redação</label>
+            <input type="text" id="enem-tema" placeholder="Ex: Desafios para a valorização da herança africana no Brasil">
+          </div>
+          <div class="form-group">
+            <label>Texto da redação</label>
+            <textarea id="enem-texto" rows="12" placeholder="Cole ou escreva sua redação aqui. O texto ideal tem entre 350 e 500 palavras..." oninput="updateWC(this,'enem-wc')"></textarea>
+            <div class="wc" id="enem-wc">0 palavras</div>
+          </div>
+          <button class="btn btn-primary" onclick="corrigirENEM()" id="btn-enem" style="width:100%;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Corrigir Redação
+          </button>
+        </div>
+      </div>
+      <div id="resultado-enem">
+        <div class="card" style="min-height:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+          <div style="font-size:40px;opacity:0.2">📝</div>
+          <div style="font-size:14px;color:var(--text3);font-family:'Syne',sans-serif">Resultado aparecerá aqui</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCURSIVA -->
+  <div id="tab-discursiva" style="display:none">
+    <div class="grid-2" style="align-items:start">
+      <div>
+        <div class="card">
+          <div class="card-title">Dados da questão</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Banca</label>
+              <select id="disc-banca">
+                <option>Cebraspe</option>
+                <option>FGV</option>
+                <option>FCC</option>
+                <option>ESAF</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Área do concurso</label>
+              <select id="disc-area">
+                <option>Direito</option>
+                <option>Administração Pública</option>
+                <option>Finanças Públicas</option>
+                <option>Tecnologia da Informação</option>
+                <option>Auditoria</option>
+                <option>Fiscal</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Enunciado da questão</label>
+            <textarea id="disc-enunciado" rows="4" placeholder="Cole o enunciado da questão discursiva exatamente como aparece na prova..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Sua resposta</label>
+            <textarea id="disc-texto" rows="8" placeholder="Digite ou cole sua resposta aqui..." oninput="updateWC(this,'disc-wc')"></textarea>
+            <div class="wc" id="disc-wc">0 palavras</div>
+          </div>
+          <div class="form-group">
+            <label>Pontuação máxima da questão</label>
+            <input type="number" id="disc-pontos" value="20" min="5" max="100">
+          </div>
+          <button class="btn btn-primary" onclick="corrigirDiscursiva()" id="btn-disc" style="width:100%;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Corrigir Discursiva
+          </button>
+        </div>
+      </div>
+      <div id="resultado-disc">
+        <div class="card" style="min-height:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+          <div style="font-size:40px;opacity:0.2">✍️</div>
+          <div style="font-size:14px;color:var(--text3);font-family:'Syne',sans-serif">Resultado aparecerá aqui</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OAB -->
+  <div id="tab-oab" style="display:none">
+    <div class="grid-2" style="align-items:start">
+      <div>
+        <div class="card">
+          <div class="card-title">Peça processual OAB</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Área do direito</label>
+              <select id="oab-area">
+                <option>Direito Civil</option>
+                <option>Direito Penal</option>
+                <option>Direito do Trabalho</option>
+                <option>Direito Tributário</option>
+                <option>Direito Administrativo</option>
+                <option>Direito do Consumidor</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo de peça</label>
+              <select id="oab-tipo">
+                <option>Petição Inicial</option>
+                <option>Contestação</option>
+                <option>Recurso Ordinário</option>
+                <option>Apelação</option>
+                <option>Habeas Corpus</option>
+                <option>Mandado de Segurança</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Enunciado / Caso prático</label>
+            <textarea id="oab-enunciado" rows="4" placeholder="Descreva o caso prático ou cole o enunciado da questão..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Sua peça processual</label>
+            <textarea id="oab-texto" rows="10" placeholder="Digite ou cole sua peça aqui..." oninput="updateWC(this,'oab-wc')"></textarea>
+            <div class="wc" id="oab-wc">0 palavras</div>
+          </div>
+          <button class="btn btn-primary" onclick="corrigirOAB()" id="btn-oab" style="width:100%;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Avaliar Peça
+          </button>
+        </div>
+      </div>
+      <div id="resultado-oab">
+        <div class="card" style="min-height:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+          <div style="font-size:40px;opacity:0.2">⚖️</div>
+          <div style="font-size:14px;color:var(--text3);font-family:'Syne',sans-serif">Avaliação da peça aparecerá aqui</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PREVISÃO ═══════════════════ -->
+<div class="page" id="page-previsao">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div class="page-title">PrevêTema</div>
+      <div class="badge badge-amber">Módulo 3</div>
+    </div>
+    <div class="page-desc">IA analisa 15 anos de histórico do ENEM e de bancas para projetar os temas mais prováveis do próximo exame.</div>
+  </div>
+
+  <div class="grid-2" style="align-items:start">
+    <div>
+      <div class="card">
+        <div class="card-title">Parâmetros da previsão</div>
+        <div class="form-group">
+          <label>Prova / Exame</label>
+          <div class="chips" id="prev-chips">
+            <div class="chip selected" onclick="selectChip(this,'prev')">ENEM</div>
+            <div class="chip" onclick="selectChip(this,'prev')">Cebraspe</div>
+            <div class="chip" onclick="selectChip(this,'prev')">FGV</div>
+            <div class="chip" onclick="selectChip(this,'prev')">Vestibular USP</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Ano de referência</label>
+          <select id="prev-ano">
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Foco temático (opcional)</label>
+          <select id="prev-foco">
+            <option value="">Todos os eixos</option>
+            <option>Direitos Humanos e Cidadania</option>
+            <option>Meio Ambiente e Sustentabilidade</option>
+            <option>Tecnologia e Sociedade</option>
+            <option>Trabalho e Economia</option>
+            <option>Saúde Pública</option>
+            <option>Educação</option>
+            <option>Cultura e Identidade</option>
+          </select>
+        </div>
+        <div class="card" style="background:var(--bg3);border-color:var(--border);padding:14px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">⚡ Base histórica incluída</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Histórico completo de temas ENEM 2010–2024 + contexto sociopolítico atual embarcado na análise.</div>
+        </div>
+        <button class="btn btn-primary" onclick="gerarPrevisao()" id="btn-prev" style="width:100%;justify-content:center;background:linear-gradient(135deg,#b45309,#d97706)">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+          Gerar Previsão de Temas
+        </button>
+      </div>
+    </div>
+    <div id="resultado-prev">
+      <div class="card" style="min-height:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+        <div style="font-size:40px;opacity:0.2">📊</div>
+        <div style="font-size:14px;color:var(--text3);font-family:'Syne',sans-serif">Previsão de temas aparecerá aqui</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ HISTÓRICO ═══════════════════ -->
+<div class="page" id="page-historico">
+  <div class="page-header">
+    <div class="page-title">Histórico</div>
+    <div class="page-desc">Acompanhe sua evolução e reveja correções anteriores.</div>
+  </div>
+  <div id="hist-content">
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Nenhum registro ainda</div>
+      <div class="empty-desc">Suas correções e flashcards gerados aparecerão aqui automaticamente</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+const API_KEY = '';
+
+const state = {
+  decks: [],
+  historico: [],
+  stats: { flash: 0, corr: 0, prev: 0 },
+  activeTab: 'enem',
+  activeBanca: 'Geral',
+  activePrev: 'ENEM'
+};
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(n => {
+    if(n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) {
+      n.classList.add('active');
+    }
+  });
+  if(page === 'home') renderHomeDeck();
+  if(page === 'historico') renderHistorico();
+  window.scrollTo(0,0);
+}
+
+function setTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-enem').style.display = tab==='enem' ? 'block':'none';
+  document.getElementById('tab-discursiva').style.display = tab==='discursiva' ? 'block':'none';
+  document.getElementById('tab-oab').style.display = tab==='oab' ? 'block':'none';
+  state.activeTab = tab;
+}
+
+function selectChip(el, grupo) {
+  const parent = el.parentElement;
+  parent.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if(grupo === 'banca') state.activeBanca = el.textContent;
+  if(grupo === 'prev') state.activePrev = el.textContent;
+}
+
+function updateWC(el, targetId) {
+  const words = el.value.trim().split(/\s+/).filter(w => w.length > 0).length;
+  document.getElementById(targetId).textContent = words + (words === 1 ? ' palavra' : ' palavras');
+}
+
+function setLoading(btnId, isLoading, label) {
+  const btn = document.getElementById(btnId);
+  if(!btn) return;
+  btn.disabled = isLoading;
+  btn.textContent = isLoading ? 'Processando...' : label;
+}
+
+async function callClaude(systemPrompt, userPrompt) {
+  if(!API_KEY) {
+    throw new Error('Configure sua API Key da Anthropic no código (variável API_KEY).\n\nEste MVP usa a API Claude diretamente. Insira sua chave no início do script para ativar a IA.');
+  }
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    })
+  });
+  if(!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Erro na API: ' + response.status);
+  }
+  const data = await response.json();
+  return data.content[0].text;
+}
+
+function parseJSON(text) {
+  const clean = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+  return JSON.parse(clean);
+}
+
+function getScoreColor(n, max) {
+  const pct = n / max;
+  if(pct >= 0.8) return 'var(--green)';
+  if(pct >= 0.6) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+// ══════════════ FLASHCARDS ══════════════
+async function gerarFlashcards() {
+  const texto = document.getElementById('flash-texto').value.trim();
+  if(texto.length < 80) {
+    alert('O texto é muito curto. Adicione pelo menos alguns parágrafos para gerar flashcards de qualidade.');
+    return;
+  }
+  const qtd = document.getElementById('flash-qtd').value;
+  const disc = document.getElementById('flash-disciplina').value;
+  const banca = state.activeBanca;
+
+  setLoading('btn-gerar', true, '');
+  document.getElementById('flash-resultado').innerHTML = `
+    <div class="card"><div class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">IA gerando flashcards<span class="loading-dots"></span></div>
+      <div style="font-size:12px;color:var(--text3);text-align:center;max-width:200px">Analisando o conteúdo e extraindo os conceitos mais importantes</div>
+    </div></div>`;
+
+  const system = `Você é um professor especialista em concursos públicos brasileiros${banca !== 'Geral' ? ` e especialmente na banca ${banca}` : ''}${disc ? `, com foco em ${disc}` : ''}. Você cria flashcards objetivos e eficientes para memorização ativa. Retorne APENAS JSON válido, sem markdown nem explicações.`;
+
+  const user = `Gere exatamente ${qtd} flashcards a partir do texto abaixo.
+Regras:
+- A "frente" deve ser uma pergunta direta e objetiva
+- O "verso" deve conter a resposta completa mas concisa (max 2-3 linhas)
+- Priorize conceitos cobrados em provas: definições, prazos, princípios, artigos de lei, competências
+- Se houver dispositivo legal, inclua o número no verso
+- Linguagem simples e direta, sem jargão desnecessário
+- Varie os tipos de pergunta (o que é, qual, quem, quando, como)
+
+Formato JSON:
+[{"frente":"pergunta aqui","verso":"resposta completa aqui"}]
+
+TEXTO:
+${texto.slice(0,8000)}`;
+
+  try {
+    const raw = await callClaude(system, user);
+    const cards = parseJSON(raw);
+    if(!Array.isArray(cards) || cards.length === 0) throw new Error('Resposta inválida da IA');
+
+    const deckId = Date.now();
+    const deck = {
+      id: deckId,
+      titulo: disc || banca !== 'Geral' ? `${disc || banca} — ${new Date().toLocaleDateString('pt-BR')}` : `Deck de ${new Date().toLocaleDateString('pt-BR')}`,
+      banca,
+      disciplina: disc,
+      cards,
+      criadoEm: new Date()
+    };
+    state.decks.unshift(deck);
+    state.stats.flash += cards.length;
+    document.getElementById('stat-flash').textContent = state.stats.flash;
+
+    renderFlashcards(deck);
+  } catch(e) {
+    document.getElementById('flash-resultado').innerHTML = `
+      <div class="card">
+        <div style="padding:20px;text-align:center">
+          <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:600;margin-bottom:8px;color:var(--red)">Erro ao gerar flashcards</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6">${e.message}</div>
+        </div>
+      </div>`;
+  }
+  setLoading('btn-gerar', false, '⚡ Gerar Flashcards com IA');
+}
+
+let currentDeck = null;
+let currentCard = 0;
+let isFlipped = false;
+
+function renderFlashcards(deck) {
+  currentDeck = deck;
+  currentCard = 0;
+  isFlipped = false;
+  updateFlashcard();
+  document.getElementById('flash-resultado').innerHTML = buildFlashcardUI(deck);
+  bindFlashcardEvents();
+}
+
+function buildFlashcardUI(deck) {
+  return `
+    <div class="card result-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600">${deck.titulo}</div>
+        <div class="badge badge-purple">${deck.cards.length} cartões</div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Clique no cartão para revelar a resposta</div>
+      <div class="flashcard-scene" onclick="flipCard()" id="fc-scene">
+        <div class="flashcard" id="flashcard">
+          <div class="fc-face front">
+            <div class="fc-label">Pergunta</div>
+            <div class="fc-text" id="fc-frente">${deck.cards[0].frente}</div>
+          </div>
+          <div class="fc-face back">
+            <div class="fc-label">Resposta</div>
+            <div class="fc-back-text" id="fc-verso">${deck.cards[0].verso}</div>
+          </div>
+        </div>
+      </div>
+      <div class="fc-nav">
+        <button class="btn btn-secondary btn-sm" onclick="prevCard()">← Anterior</button>
+        <div style="display:flex;flex-direction:column;align-items:center;flex:1;margin:0 12px">
+          <div class="fc-progress"><div class="fc-progress-bar" id="fc-prog" style="width:${(1/deck.cards.length*100).toFixed(1)}%"></div></div>
+          <div class="fc-counter" id="fc-count" style="margin-top:6px">1 / ${deck.cards.length}</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="nextCard()">Próximo →</button>
+      </div>
+      <div style="margin-top:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Todos os cartões</div>
+        <div class="results-scroll">
+          ${deck.cards.map((c,i) => `
+            <div onclick="goToCard(${i})" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s" id="fc-list-${i}">
+              <div style="font-size:11px;font-weight:600;color:var(--accent2);margin-bottom:4px">Cartão ${i+1}</div>
+              <div style="font-size:13px;margin-bottom:4px">${c.frente}</div>
+              <div style="font-size:12px;color:var(--text3);line-height:1.5">${c.verso}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function bindFlashcardEvents() {}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', isFlipped);
+}
+
+function nextCard() {
+  if(!currentDeck) return;
+  if(currentCard < currentDeck.cards.length - 1) {
+    currentCard++;
+    updateFlashcard();
+    isFlipped = false;
+    const el = document.getElementById('flashcard');
+    if(el) el.classList.remove('flipped');
+  }
+}
+
+function prevCard() {
+  if(!currentDeck) return;
+  if(currentCard > 0) {
+    currentCard--;
+    updateFlashcard();
+    isFlipped = false;
+    const el = document.getElementById('flashcard');
+    if(el) el.classList.remove('flipped');
+  }
+}
+
+function goToCard(i) {
+  currentCard = i;
+  updateFlashcard();
+  isFlipped = false;
+  const el = document.getElementById('flashcard');
+  if(el) el.classList.remove('flipped');
+}
+
+function updateFlashcard() {
+  if(!currentDeck) return;
+  const card = currentDeck.cards[currentCard];
+  const frEl = document.getElementById('fc-frente');
+  const vsEl = document.getElementById('fc-verso');
+  const cEl = document.getElementById('fc-count');
+  const pEl = document.getElementById('fc-prog');
+  if(frEl) frEl.textContent = card.frente;
+  if(vsEl) vsEl.textContent = card.verso;
+  if(cEl) cEl.textContent = (currentCard+1) + ' / ' + currentDeck.cards.length;
+  if(pEl) pEl.style.width = ((currentCard+1)/currentDeck.cards.length*100).toFixed(1) + '%';
+}
+
+// ══════════════ CORRETOR ENEM ══════════════
+async function corrigirENEM() {
+  const tema = document.getElementById('enem-tema').value.trim();
+  const texto = document.getElementById('enem-texto').value.trim();
+  if(!tema) { alert('Informe o tema da redação.'); return; }
+  if(texto.split(/\s+/).length < 50) { alert('A redação está muito curta. Mínimo de 100 palavras para uma correção significativa.'); return; }
+
+  setLoading('btn-enem', true, '');
+  document.getElementById('resultado-enem').innerHTML = `
+    <div class="card"><div class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Corrigindo redação<span class="loading-dots"></span></div>
+      <div style="font-size:12px;color:var(--text3);text-align:center;max-width:220px">Analisando as 5 competências do INEP com critério de corretor experiente</div>
+    </div></div>`;
+
+  const system = `Você é um corretor especializado no ENEM com 10 anos de experiência, certificado pelo INEP. Você corrige redações com rigor e precisão, usando os critérios oficiais. Retorne APENAS JSON válido sem markdown.`;
+
+  const user = `Corrija a redação abaixo pelo método ENEM com as 5 competências do INEP.
+
+TEMA: ${tema}
+
+REDAÇÃO:
+${texto}
+
+Avalie cada competência (nota múltipla de 40: 0, 40, 80, 120, 160 ou 200):
+- C1: Domínio da modalidade escrita formal
+- C2: Compreensão da proposta e desenvolvimento do tema
+- C3: Seleção e organização de argumentos
+- C4: Coesão e coerência textual
+- C5: Proposta de intervenção detalhada e respeitando direitos humanos
+
+Formato JSON:
+{
+  "nota_total": 0,
+  "competencias": {
+    "c1": {"nota":0,"titulo":"Domínio da escrita","positivos":"...","problemas":"...","sugestao":"..."},
+    "c2": {"nota":0,"titulo":"Tema e proposta","positivos":"...","problemas":"...","sugestao":"..."},
+    "c3": {"nota":0,"titulo":"Seleção de argumentos","positivos":"...","problemas":"...","sugestao":"..."},
+    "c4": {"nota":0,"titulo":"Coesão textual","positivos":"...","problemas":"...","sugestao":"..."},
+    "c5": {"nota":0,"titulo":"Proposta de intervenção","positivos":"...","problemas":"...","sugestao":"..."}
+  },
+  "feedback_geral": "análise geral em 3-4 frases",
+  "pontos_criticos": ["ponto 1","ponto 2","ponto 3"],
+  "proximo_passo": "ação concreta que o candidato deve tomar para melhorar"
+}`;
+
+  try {
+    const raw = await callClaude(system, user);
+    const result = parseJSON(raw);
+    state.stats.corr++;
+    document.getElementById('stat-corr').textContent = state.stats.corr;
+    state.historico.unshift({ tipo:'ENEM', nota: result.nota_total, max:1000, data: new Date(), preview: texto.slice(0,80) });
+    renderResultadoENEM(result);
+  } catch(e) {
+    document.getElementById('resultado-enem').innerHTML = `
+      <div class="card"><div style="padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;color:var(--red);margin-bottom:8px">Erro na correção</div>
+        <div style="font-size:13px;color:var(--text2)">${e.message}</div>
+      </div></div>`;
+  }
+  setLoading('btn-enem', false, '✅ Corrigir Redação');
+}
+
+function renderResultadoENEM(r) {
+  const comps = r.competencias;
+  const nota = r.nota_total;
+  const cor = getScoreColor(nota, 1000);
+  const nivel = nota >= 800 ? 'Excelente' : nota >= 600 ? 'Bom' : nota >= 400 ? 'Regular' : 'Precisa melhorar';
+
+  let html = `<div class="card result-section">
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px">
+      <div>
+        <div class="score-display"><span class="score-big" style="color:${cor}">${nota}</span><span class="score-max">/1000</span></div>
+        <div style="font-size:13px;color:var(--text2);margin-top:4px">${nivel}</div>
+      </div>
+      <div style="flex:1">
+        <div class="comp-grid">
+          ${Object.entries(comps).map(([k,c]) => `
+            <div class="comp-row">
+              <div class="comp-label">${k.toUpperCase()}</div>
+              <div class="comp-bar-wrap"><div class="comp-bar" style="width:${(c.nota/200*100)}%;background:${getScoreColor(c.nota,200)}"></div></div>
+              <div class="comp-score">${c.nota}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="feedback-box"><div class="feedback-title">Avaliação geral</div><div class="feedback-text">${r.feedback_geral}</div></div>
+    <div style="margin-top:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Feedback por competência</div>
+      <div class="results-scroll">
+      ${Object.entries(comps).map(([k,c]) => `
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600">${c.titulo}</div>
+            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:${getScoreColor(c.nota,200)}">${c.nota}/200</div>
+          </div>
+          ${c.positivos ? `<div class="feedback-box green" style="margin-bottom:8px"><div class="feedback-title">✓ Pontos positivos</div><div class="feedback-text">${c.positivos}</div></div>` : ''}
+          ${c.problemas ? `<div class="feedback-box red" style="margin-bottom:8px"><div class="feedback-title">✗ Problemas</div><div class="feedback-text">${c.problemas}</div></div>` : ''}
+          ${c.sugestao ? `<div class="feedback-box" style="margin-bottom:0"><div class="feedback-title">→ Sugestão</div><div class="feedback-text">${c.sugestao}</div></div>` : ''}
+        </div>`).join('')}
+      </div>
+    </div>
+    ${r.pontos_criticos?.length ? `<div style="margin-top:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Prioridades de melhoria</div>
+      ${r.pontos_criticos.map((p,i) => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent2);font-size:13px">${i+1}</span><span style="font-size:13px;color:var(--text2)">${p}</span></div>`).join('')}
+    </div>` : ''}
+    ${r.proximo_passo ? `<div class="feedback-box amber" style="margin-top:16px"><div class="feedback-title">⚡ Próximo passo</div><div class="feedback-text">${r.proximo_passo}</div></div>` : ''}
+  </div>`;
+  document.getElementById('resultado-enem').innerHTML = html;
+}
+
+// ══════════════ CORRETOR DISCURSIVA ══════════════
+async function corrigirDiscursiva() {
+  const enunciado = document.getElementById('disc-enunciado').value.trim();
+  const texto = document.getElementById('disc-texto').value.trim();
+  const banca = document.getElementById('disc-banca').value;
+  const area = document.getElementById('disc-area').value;
+  const pontos = document.getElementById('disc-pontos').value;
+  if(!enunciado) { alert('Informe o enunciado da questão.'); return; }
+  if(texto.split(/\s+/).length < 30) { alert('Resposta muito curta para avaliar.'); return; }
+
+  setLoading('btn-disc', true, '');
+  document.getElementById('resultado-disc').innerHTML = `<div class="card"><div class="loading"><div class="spinner"></div><div class="loading-text">Avaliando discursiva<span class="loading-dots"></span></div></div></div>`;
+
+  const system = `Você é um corretor especializado em provas discursivas da banca ${banca} para concursos públicos na área de ${area}. Retorne APENAS JSON válido sem markdown.`;
+  const user = `Avalie a resposta discursiva abaixo.
+BANCA: ${banca} | ÁREA: ${area} | PONTUAÇÃO MÁXIMA: ${pontos} pontos
+ENUNCIADO: ${enunciado}
+RESPOSTA DO CANDIDATO: ${texto}
+
+JSON:
+{"nota":0,"nota_maxima":${pontos},"percentual":0,"nivel":"Insuficiente|Regular|Bom|Excelente","criterios":{"coesao":{"nota":0,"max":${Math.round(pontos*0.2)},"obs":"..."},"conteudo":{"nota":0,"max":${Math.round(pontos*0.5)},"obs":"..."},"linguagem":{"nota":0,"max":${Math.round(pontos*0.15)},"obs":"..."},"completude":{"nota":0,"max":${Math.round(pontos*0.15)},"obs":"..."}},"pontos_positivos":["..."],"pontos_negativos":["..."],"sugestao":"...","modelo_resposta":"como seria uma resposta nota máxima em 3 frases"}`;
+
+  try {
+    const raw = await callClaude(system, user);
+    const result = parseJSON(raw);
+    state.stats.corr++;
+    document.getElementById('stat-corr').textContent = state.stats.corr;
+    state.historico.unshift({ tipo:'Discursiva '+banca, nota: result.nota, max: result.nota_maxima, data: new Date(), preview: texto.slice(0,80) });
+    renderResultadoDisc(result);
+  } catch(e) {
+    document.getElementById('resultado-disc').innerHTML = `<div class="card"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:12px">⚠️</div><div style="font-size:13px;color:var(--red)">${e.message}</div></div></div>`;
+  }
+  setLoading('btn-disc', false, '✅ Corrigir Discursiva');
+}
+
+function renderResultadoDisc(r) {
+  const cor = getScoreColor(r.nota, r.nota_maxima);
+  document.getElementById('resultado-disc').innerHTML = `
+    <div class="card result-section">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
+        <span class="score-big" style="color:${cor}">${r.nota.toFixed(1)}</span>
+        <span class="score-max">/${r.nota_maxima} pts</span>
+        <span class="badge ${r.percentual >= 70 ? 'badge-green' : r.percentual >= 50 ? 'badge-amber' : 'badge-red'}" style="margin-left:8px">${r.nivel}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:20px">${Math.round(r.percentual)}% do total</div>
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Por critério</div>
+      <div class="comp-grid" style="margin-bottom:16px">
+        ${Object.entries(r.criterios).map(([k,c]) => `
+          <div class="comp-row">
+            <div class="comp-label">${k.charAt(0).toUpperCase()+k.slice(1)}</div>
+            <div class="comp-bar-wrap"><div class="comp-bar" style="width:${(c.nota/c.max*100)}%;background:${getScoreColor(c.nota,c.max)}"></div></div>
+            <div class="comp-score">${c.nota}/${c.max}</div>
+          </div>`).join('')}
+      </div>
+      ${r.pontos_positivos?.length ? `<div class="feedback-box green" style="margin-bottom:8px"><div class="feedback-title">✓ Pontos fortes</div><div class="feedback-text">${r.pontos_positivos.join(' • ')}</div></div>` : ''}
+      ${r.pontos_negativos?.length ? `<div class="feedback-box red" style="margin-bottom:8px"><div class="feedback-title">✗ A melhorar</div><div class="feedback-text">${r.pontos_negativos.join(' • ')}</div></div>` : ''}
+      ${r.sugestao ? `<div class="feedback-box" style="margin-bottom:8px"><div class="feedback-title">→ Sugestão</div><div class="feedback-text">${r.sugestao}</div></div>` : ''}
+      ${r.modelo_resposta ? `<div class="feedback-box amber"><div class="feedback-title">💡 Resposta modelo (referência)</div><div class="feedback-text">${r.modelo_resposta}</div></div>` : ''}
+    </div>`;
+}
+
+// ══════════════ CORRETOR OAB ══════════════
+async function corrigirOAB() {
+  const enunciado = document.getElementById('oab-enunciado').value.trim();
+  const texto = document.getElementById('oab-texto').value.trim();
+  const area = document.getElementById('oab-area').value;
+  const tipo = document.getElementById('oab-tipo').value;
+  if(!texto || texto.split(/\s+/).length < 40) { alert('A peça está muito curta para avaliar.'); return; }
+
+  setLoading('btn-oab', true, '');
+  document.getElementById('resultado-oab').innerHTML = `<div class="card"><div class="loading"><div class="spinner"></div><div class="loading-text">Avaliando peça<span class="loading-dots"></span></div></div></div>`;
+
+  const system = `Você é um avaliador especializado em exames OAB pela FGV com vasta experiência em ${area}. Avalie peças processuais com rigor técnico-jurídico. Retorne APENAS JSON válido.`;
+  const user = `Avalie a ${tipo} de ${area} abaixo.
+ENUNCIADO: ${enunciado || 'Não informado'}
+PEÇA: ${texto}
+
+JSON:
+{"nota":0,"nota_maxima":10,"nivel":"Insuficiente|Regular|Bom|Excelente","estrutura":{"cabecalho":{"ok":true,"obs":"..."},"qualificacao":{"ok":true,"obs":"..."},"causa_pedir":{"ok":true,"obs":"..."},"pedido":{"ok":true,"obs":"..."},"fechamento":{"ok":true,"obs":"..."}},"pontos_positivos":["..."],"erros_formais":["..."],"sugestao":"...","nota_detalhada":{"tecnica":0,"formal":0,"completude":0}}`;
+
+  try {
+    const raw = await callClaude(system, user);
+    const result = parseJSON(raw);
+    state.stats.corr++;
+    document.getElementById('stat-corr').textContent = state.stats.corr;
+    state.historico.unshift({ tipo:'OAB '+area, nota: result.nota, max: 10, data: new Date(), preview: texto.slice(0,80) });
+    renderResultadoOAB(result, tipo);
+  } catch(e) {
+    document.getElementById('resultado-oab').innerHTML = `<div class="card"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:12px">⚠️</div><div style="font-size:13px;color:var(--red)">${e.message}</div></div></div>`;
+  }
+  setLoading('btn-oab', false, '✅ Avaliar Peça');
+}
+
+function renderResultadoOAB(r, tipo) {
+  const cor = getScoreColor(r.nota, r.nota_maxima);
+  const struct = r.estrutura || {};
+  document.getElementById('resultado-oab').innerHTML = `
+    <div class="card result-section">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
+        <span class="score-big" style="color:${cor}">${Number(r.nota).toFixed(1)}</span>
+        <span class="score-max">/${r.nota_maxima}</span>
+        <span class="badge ${r.nota/r.nota_maxima >= 0.7 ? 'badge-green' : r.nota/r.nota_maxima >= 0.5 ? 'badge-amber' : 'badge-red'}" style="margin-left:8px">${r.nivel}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:20px">${tipo}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Checklist estrutural</div>
+      <div style="margin-bottom:16px">
+        ${Object.entries(struct).map(([k,v]) => {
+          const nome = {cabecalho:'Cabeçalho',qualificacao:'Qualificação',causa_pedir:'Causa de Pedir',pedido:'Pedido',fechamento:'Fechamento'}[k] || k;
+          return `<div style="display:flex;align-items:start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span style="color:${v.ok?'var(--green)':'var(--red)'};font-size:14px;margin-top:1px">${v.ok?'✓':'✗'}</span>
+            <div><div style="font-size:13px;font-weight:500;margin-bottom:2px">${nome}</div><div style="font-size:12px;color:var(--text3)">${v.obs||''}</div></div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${r.pontos_positivos?.length ? `<div class="feedback-box green" style="margin-bottom:8px"><div class="feedback-title">✓ Pontos fortes</div><div class="feedback-text">${r.pontos_positivos.join(' • ')}</div></div>` : ''}
+      ${r.erros_formais?.length ? `<div class="feedback-box red" style="margin-bottom:8px"><div class="feedback-title">✗ Erros formais</div><div class="feedback-text">${r.erros_formais.join(' • ')}</div></div>` : ''}
+      ${r.sugestao ? `<div class="feedback-box"><div class="feedback-title">→ Como melhorar</div><div class="feedback-text">${r.sugestao}</div></div>` : ''}
+    </div>`;
+}
+
+// ══════════════ PREVISÃO DE TEMAS ══════════════
+async function gerarPrevisao() {
+  const ano = document.getElementById('prev-ano').value;
+  const foco = document.getElementById('prev-foco').value;
+  const prova = state.activePrev;
+
+  setLoading('btn-prev', true, '');
+  document.getElementById('resultado-prev').innerHTML = `<div class="card"><div class="loading"><div class="spinner"></div><div class="loading-text">Analisando histórico<span class="loading-dots"></span></div><div style="font-size:12px;color:var(--text3);text-align:center;max-width:200px">IA cruzando 15 anos de temas com o contexto sociopolítico atual</div></div></div>`;
+
+  const system = `Você é um analista especializado em tendências de provas e exames brasileiros, com vasto conhecimento do contexto sociopolítico e histórico do Brasil. Retorne APENAS JSON válido sem markdown.`;
+
+  const historico = `2010: O trabalho na construção da dignidade humana
+2011: Viver em rede no século XXI: os limites entre o público e o privado
+2012: Movimento imigratório para o Brasil no século XXI
+2013: Efeitos da implantação da Lei Seca no Brasil
+2014: Publicidade infantil em questão no Brasil
+2015: A persistência da violência contra a mulher na sociedade brasileira
+2016: Caminhos para combater a intolerância religiosa no Brasil
+2017: Desafios para a formação educacional de surdos no Brasil
+2018: Manipulação do comportamento do usuário pelo controle de dados na internet
+2019: Democratização do acesso ao cinema no Brasil
+2020: O estigma associado às doenças mentais na sociedade brasileira
+2021: Invisibilidade e registro civil: ser "invisível" na sociedade brasileira
+2022: Desafios para a valorização de comunidades e povos tradicionais no Brasil
+2023: Desafios para o enfrentamento da invisibilidade do trabalho de cuidado
+2024: Desafios para a valorização da herança africana no Brasil
+2025: Direito à saúde mental no Brasil`;
+
+  const user = `Analise o histórico de temas do ${prova} e projete os 5 temas mais prováveis para ${ano}.
+${foco ? `Foco especial em: ${foco}` : ''}
+
+HISTÓRICO DE TEMAS:
+${historico}
+
+Padrões a identificar:
+- Eixos temáticos sub-representados nos últimos 5 anos
+- Pautas sociais emergentes no Brasil ${parseInt(ano)-1}–${ano}
+- Alternância entre eixos (tecnologia, direitos, meio ambiente, saúde, trabalho, cultura)
+- Temas com "dívida histórica" (eixos que voltam em ciclos)
+
+JSON:
+{"analise_historica":"2-3 frases sobre padrões identificados","eixo_evitado":"eixo que NÃO deve aparecer e por quê","temas_previstos":[{"tema":"título do tema","eixo":"categoria","justificativa":"por que esse tema agora em 2-3 frases","probabilidade":0.0,"dicas":["dica de argumento 1","dica de argumento 2"]}]}`;
+
+  try {
+    const raw = await callClaude(system, user);
+    const result = parseJSON(raw);
+    state.stats.prev++;
+    document.getElementById('stat-prev').textContent = state.stats.prev;
+    renderResultadoPrev(result, prova, ano);
+  } catch(e) {
+    document.getElementById('resultado-prev').innerHTML = `<div class="card"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:12px">⚠️</div><div style="font-size:13px;color:var(--red)">${e.message}</div></div></div>`;
+  }
+  setLoading('btn-prev', false, '📊 Gerar Previsão de Temas');
+}
+
+const eixoColor = {
+  'Direitos Humanos e Cidadania':'badge-purple',
+  'Meio Ambiente e Sustentabilidade':'badge-green',
+  'Tecnologia e Sociedade':'badge-blue',
+  'Trabalho e Economia':'badge-amber',
+  'Saúde Pública':'badge-red',
+  'Educação':'badge-blue',
+  'Cultura e Identidade':'badge-purple',
+  'default':'badge-blue'
+};
+
+function renderResultadoPrev(r, prova, ano) {
+  const temas = r.temas_previstos || [];
+  let html = `<div class="result-section">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Análise histórica — ${prova} ${ano}</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.7">${r.analise_historica}</div>
+      ${r.eixo_evitado ? `<div class="feedback-box amber" style="margin-top:12px"><div class="feedback-title">⚠️ Eixo improvável</div><div class="feedback-text">${r.eixo_evitado}</div></div>` : ''}
+    </div>
+    ${temas.map((t,i) => {
+      const pct = Math.round((t.probabilidade || 0.5) * 100);
+      const badgeClass = eixoColor[t.eixo] || eixoColor.default;
+      return `
+        <div class="tema-card">
+          <div class="tema-rank">${i+1}</div>
+          <div class="tema-eixo"><span class="badge ${badgeClass}">${t.eixo || 'Geral'}</span></div>
+          <div class="tema-titulo">${t.tema}</div>
+          <div class="tema-just">${t.justificativa}</div>
+          ${t.dicas?.length ? `<div style="margin-top:10px"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">💡 Argumentos sugeridos</div>${t.dicas.map(d=>`<div style="font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px"><span style="color:var(--accent2)">→</span><span>${d}</span></div>`).join('')}</div>` : ''}
+          <div class="prob-bar-wrap"><div class="prob-bar" style="width:${pct}%"></div></div>
+          <div class="prob-label">${pct}% de probabilidade estimada</div>
+        </div>`;
+    }).join('')}
+  </div>`;
+  document.getElementById('resultado-prev').innerHTML = html;
+}
+
+// ══════════════ HOME / HISTÓRICO ══════════════
+function renderHomeDeck() {
+  const el = document.getElementById('home-decks');
+  if(state.decks.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><div class="empty-title">Nenhum deck ainda</div><div class="empty-desc">Gere seus primeiros flashcards no módulo FlashIA</div></div>`;
+    return;
+  }
+  el.innerHTML = state.decks.slice(0,3).map(d => `
+    <div class="deck-item" onclick="navigate('flashcards')">
+      <div class="deck-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="var(--accent2)"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.396 0 2.7.39 3.8 1.064A7.97 7.97 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg></div>
+      <div class="deck-info"><div class="deck-name">${d.titulo}</div><div class="deck-meta">${d.banca} · ${d.cards.length} cartões · ${d.criadoEm.toLocaleDateString('pt-BR')}</div></div>
+      <div class="deck-count">${d.cards.length}</div>
+    </div>`).join('');
+}
+
+function renderHistorico() {
+  const el = document.getElementById('hist-content');
+  if(state.historico.length === 0 && state.decks.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nenhum registro ainda</div><div class="empty-desc">Suas atividades aparecerão aqui</div></div>`;
+    return;
+  }
+  let html = '';
+  if(state.historico.length) {
+    html += `<div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Correções</div>`;
+    html += state.historico.map(h => {
+      const pct = Math.round(h.nota/h.max*100);
+      const cor = getScoreColor(h.nota, h.max);
+      return `<div class="hist-item">
+        <div class="hist-score" style="color:${cor}">${typeof h.nota === 'number' && h.nota % 1 !== 0 ? h.nota.toFixed(1) : h.nota}<span style="font-size:13px;color:var(--text3);font-weight:400">/${h.max}</span></div>
+        <div class="hist-info">
+          <div class="hist-type">${h.tipo} · ${pct}%</div>
+          <div class="hist-preview">${h.preview}...</div>
+          <div class="hist-date">${h.data.toLocaleDateString('pt-BR')} às ${h.data.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if(state.decks.length) {
+    html += `<div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:20px 0 12px">Decks criados</div>`;
+    html += state.decks.map(d => `<div class="hist-item">
+      <div class="hist-score" style="color:var(--accent2)">${d.cards.length}<span style="font-size:11px;color:var(--text3);font-weight:400"> cards</span></div>
+      <div class="hist-info">
+        <div class="hist-type">${d.banca} ${d.disciplina ? '· '+d.disciplina : ''}</div>
+        <div class="hist-preview">${d.titulo}</div>
+        <div class="hist-date">${d.criadoEm.toLocaleDateString('pt-BR')}</div>
+      </div>
+    </div>`).join('');
+  }
+  el.innerHTML = html;
+}
+</script>
+</body>
+</html>
