@@ -68,7 +68,8 @@
     <!-- ===== Decks recentes ===== -->
     <div class="section-title">Seus decks recentes</div>
     <div th:if="${decksRecentes != null and !decksRecentes.isEmpty()}">
-        <div class="deck-item" th:each="deck : ${decksRecentes}">
+        <a class="deck-item" th:each="deck : ${decksRecentes}"
+           th:href="@{/flashcards/{id}(id=${deck.id})}">
             <div class="deck-icon">📚</div>
             <div class="deck-info">
                 <div class="deck-name" th:text="${deck.titulo}">Deck</div>
@@ -79,7 +80,7 @@
                 </div>
             </div>
             <div class="deck-count" th:text="${deck.flashcards.size()}">0</div>
-        </div>
+        </a>
     </div>
     <div th:if="${decksRecentes == null or decksRecentes.isEmpty()}" class="empty">
         <div class="empty-icon">📚</div>

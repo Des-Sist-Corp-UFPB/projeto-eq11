@@ -47,7 +47,10 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         window.__cards = JSON.parse(/*[[${cartoesJson}]]*/ '[]');
-        fcInit();
+        // Via HTMX o studyai.js já está carregado (fcInit existe). Em carga de página
+        // inteira (deck reaberto), o script roda antes do studyai.js → adia a init.
+        if (typeof fcInit === 'function') { fcInit(); }
+        else { document.addEventListener('DOMContentLoaded', function () { fcInit(); }); }
         /*]]>*/
     </script>
 </div>

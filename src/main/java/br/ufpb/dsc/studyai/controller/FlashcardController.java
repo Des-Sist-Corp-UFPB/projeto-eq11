@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -52,6 +53,38 @@ public class FlashcardController {
     @GetMapping
     public String pagina(Model model) {
         model.addAttribute("titulo", "FlashIA");
+        return "studyai/flashcards";
+    }
+
+    /**
+     * Reabre um deck salvo: renderiza a página do FlashIA com o carrossel já
+     * preenchido com os cartões daquele deck (reaproveita o fragmento de resultado).
+     *
+     * <p>Acionado ao clicar num deck na home ({@code /flashcards/{id}}).
+     *
+     * @param id    identificador do deck
+     * @param model modelo Thymeleaf
+     * @return página do FlashIA com o deck carregado (ou o placeholder, se não existir)
+     */
+    @GetMapping("/{id}")
+    public String abrirDeck(@PathVariable Long id, Model model) {
+        model.addAttribute("titulo", "FlashIA");
+        var deckOpt = flashcardService.buscarDeck(id);
+        if (deckOpt.isPresent()) {
+            Deck deck = deckOpt.get();
+            List<FlashcardDTO> cartoes = deck.getFlashcards().stream()
+                    .map(f -> new FlashcardDTO(f.getFrente(), f.getVerso()))
+                    .toList();
+            model.addAttribute("deck", deck);
+            model.addAttribute("cartoes", cartoes);
+            try {
+                model.addAttribute("cartoesJson", objectMapper.writeValueAsString(cartoes));
+            } catch (JsonProcessingException e) {
+                // Sem JSON dos cartões, a página cai no placeholder em vez de quebrar
+                model.addAttribute("deck", null);
+            }
+        }
+        // Se o deck não existir, "deck" fica ausente e a página exibe o placeholder padrão
         return "studyai/flashcards";
     }
 

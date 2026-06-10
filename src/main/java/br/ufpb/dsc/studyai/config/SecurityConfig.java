@@ -63,7 +63,15 @@ public class SecurityConfig {
                 // ROLE_ADMIN é adicionado automaticamente; "roles" é um atalho para "authorities"
                 .roles("ADMIN")
                 .build();
-        return new InMemoryUserDetailsManager(admin);
+
+        // Usuário de demonstração (fase demo — em memória, ainda sem cadastro em banco)
+        UserDetails jeanmatheus = User.builder()
+                .username("jeanmatheus")
+                .password(encoder.encode("teste10"))
+                .roles("USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(admin, jeanmatheus);
     }
 
     /**

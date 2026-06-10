@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Serviço de negócio do módulo <strong>FlashIA</strong>.
@@ -71,6 +72,22 @@ public class FlashcardService {
             deck.adicionarFlashcard(new Flashcard(dto.frente(), dto.verso(), ordem++));
         }
         return deckRepository.save(deck);
+    }
+
+    /**
+     * Carrega um deck salvo já com seus flashcards, para reabrir/revisar.
+     *
+     * <p>Roda na transação read-only da classe, então a coleção lazy de flashcards
+     * pode ser inicializada com segurança antes de devolver a entidade.
+     *
+     * @param id identificador do deck
+     * @return o deck com os flashcards carregados, ou vazio se não existir
+     */
+    public Optional<Deck> buscarDeck(Long id) {
+        return deckRepository.findById(id).map(deck -> {
+            deck.getFlashcards().size(); // força a inicialização da coleção lazy
+            return deck;
+        });
     }
 
     // =========================================================================

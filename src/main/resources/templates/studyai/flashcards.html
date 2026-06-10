@@ -104,8 +104,10 @@
                 </div>
             </div>
             <div id="flash-resultado">
-                <!-- Placeholder inicial -->
-                <div class="card placeholder-card">
+                <!-- Deck reaberto (GET /flashcards/{id}): renderiza o carrossel já preenchido -->
+                <div th:if="${deck != null}" th:replace="~{studyai/fragments/flashcard-result :: cards}"></div>
+                <!-- Placeholder inicial (quando não há deck carregado) -->
+                <div th:if="${deck == null}" class="card placeholder-card">
                     <div class="placeholder-emoji">🃏</div>
                     <div class="placeholder-text">Seus flashcards aparecerão aqui</div>
                 </div>
