@@ -6,7 +6,7 @@
 | **Repositório** | https://github.com/des-sist-corp-ufpb/projeto-eq11 |
 | **Aplicação** | https://eq11.dsc.rodrigor.com |
 | **Período de atividade** | 2026-06-10 → 2026-06-25 |
-| **Total de commits** (sem merges, branch main) | 2 |
+| **Total de commits** (sem merges, branch main) | 3 |
 | **Integrantes** | Clodomir Alves De Oliveira Junior (@clodomiralves), Jean Matheus Nunes De Lima Barros (@jeanmatheusnunes) |
 
 ---
@@ -54,7 +54,7 @@
 | Aspecto | Status | Observação |
 |---------|--------|-----------|
 | Arquitetura em camadas | ✅ | controller=✅  service=✅  repository=✅ |
-| Testes automatizados | ✅ | 2 arquivo(s) de teste |
+| Testes automatizados | ✅ | 3 Java, 0 JS/TS, 0 Python |
 | Migrations versionadas | ✅ | 3 migration(s) |
 | Logging | ✅ | @Slf4j / LoggerFactory / logging.getLogger detectado |
 | Autenticação / Segurança | ✅ | Spring Security / JWT / decorator detectado |
@@ -74,7 +74,7 @@
 |---------|---------------|---------------------|-------------------|----------------------|----------------|
 | Clodomir Alves De Oliveira Junior (@clodomiralves) | 1 | **10** ⚠️ | 5.412 | 3.561 | 100% |
 | Jean Matheus Nunes De Lima Barros (@jeanmatheusnunes) | 0 | **0** | 0 | 0 | 0% |
-| *(sem login GitHub)* | 1 | 50% | — | — | — |
+| *(sem login GitHub)* | 2 | 67% | — | — | — |
 
 > **⚠️ Divergência entre commits locais e GitHub API:**
 > - **@clodomiralves**: 1 commit(s) na branch `main` vs **10** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
