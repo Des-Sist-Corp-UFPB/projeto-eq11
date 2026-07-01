@@ -1,5 +1,6 @@
 package br.ufpb.dsc.studyai.controller;
 
+import br.ufpb.dsc.studyai.audit.AuditLogService;
 import br.ufpb.dsc.studyai.domain.Deck;
 import br.ufpb.dsc.studyai.dto.FlashcardDTO;
 import br.ufpb.dsc.studyai.dto.FlashcardRequest;
@@ -38,10 +39,14 @@ public class FlashcardController {
 
     private final FlashcardService flashcardService;
     private final ObjectMapper objectMapper;
+    private final AuditLogService auditLogService;
 
-    public FlashcardController(FlashcardService flashcardService, ObjectMapper objectMapper) {
+    public FlashcardController(FlashcardService flashcardService,
+                              ObjectMapper objectMapper,
+                              AuditLogService auditLogService) {
         this.flashcardService = flashcardService;
         this.objectMapper = objectMapper;
+        this.auditLogService = auditLogService;
     }
 
     /**
@@ -105,6 +110,11 @@ public class FlashcardController {
             List<FlashcardDTO> cartoes = deck.getFlashcards().stream()
                     .map(f -> new FlashcardDTO(f.getFrente(), f.getVerso()))
                     .toList();
+
+            // Auditoria: registra a geração de flashcards (usuário e IP resolvidos no service)
+            auditLogService.registrar(
+                    "GERAR_FLASHCARD", "deck", deck.getId(),
+                    cartoes.size() + " cartões; banca=" + deck.getBanca());
 
             model.addAttribute("deck", deck);
             model.addAttribute("cartoes", cartoes);

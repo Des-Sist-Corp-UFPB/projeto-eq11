@@ -1,9 +1,11 @@
 package br.ufpb.dsc.studyai.controller;
 
+import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
 import br.ufpb.dsc.studyai.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,6 +25,11 @@ class PingControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // O SecurityConfig importado injeta um AuditLogoutHandler na cadeia de logout;
+    // no slice web ele não é escaneado, então fornecemos um mock para satisfazer a dependência.
+    @MockBean
+    private AuditLogoutHandler auditLogoutHandler;
 
     @Test
     void ping_deveResponder200JsonPublicamente_semLogin() throws Exception {

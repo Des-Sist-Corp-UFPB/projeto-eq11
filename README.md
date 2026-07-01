@@ -60,14 +60,16 @@ O desenvolvimento é incremental. Cada fase entrega algo demonstrável.
 |:----:|---------|:------:|
 | **0** | **Fundação** — scaffold, identidade visual (tema escuro, Syne + DM Sans), layout Thymeleaf, login (Spring Security), Docker e CI/CD configurados | ✅ Concluída |
 | **1** | **FlashIA ponta a ponta** — domínio `Deck`/`Flashcard`, migration Flyway, `IAService` (interface) com modo demo + provedores reais, persistência, fragmentos HTMX, home com estatísticas reais | ✅ Concluída |
-| **2** | **CorretorIA** — correção ENEM/Discursiva/OAB; entidade `Correcao` com `payload` JSONB; 3 endpoints + fragmentos de resultado | 📍 **FASE ATUAL** |
-| **3** | **PrevêTema + Histórico** — entidade `Previsao`, seed do histórico ENEM, página de histórico paginada | ⬜ Planejada |
-| **4** | **Autenticação em banco + Planos** — entidade `Usuario` (`UserDetailsService`), planos GRATUITO/PRO e limites de uso impostos no servidor | ⬜ Planejada |
-| **5** | **Hardening & Pagamentos** — webhook de pagamento, cobertura de testes, ajustes finais de SAST e deploy | ⬜ Planejada |
+| **1.5** | **Auditoria + cobertura de testes** — módulo de log de auditoria (`audit_log`), integração de IA documentada e cobertura ≥ 85% | ✅ Concluída |
+| **2** | **CorretorIA** — correção ENEM/Discursiva/OAB; entidade `Correcao` com `payload` JSONB; 3 endpoints + fragmentos de resultado | ⬜ Planejada (roadmap) |
+| **3** | **PrevêTema + Histórico** — entidade `Previsao`, seed do histórico ENEM, página de histórico paginada | ⬜ Planejada (roadmap) |
+| **4** | **Autenticação em banco + Planos** — entidade `Usuario` (`UserDetailsService`), planos GRATUITO/PRO e limites de uso impostos no servidor | ⬜ Planejada (roadmap) |
+| **5** | **Hardening & Pagamentos** — webhook de pagamento, ajustes finais de SAST e deploy | ⬜ Planejada (roadmap) |
 
-> 📍 **Estamos iniciando a Fase 2 (CorretorIA).** As Fases 0 e 1 estão concluídas e
-> validadas: já temos **um módulo de IA funcionando ponta a ponta** sobre uma base
-> corporativa, segura e pronta para deploy.
+> ✅ **O que está implementado hoje:** o módulo **FlashIA** (geração de flashcards por IA)
+> ponta a ponta, sobre uma base corporativa segura, com **log de auditoria** e **cobertura
+> de testes ≥ 85%**. As Fases 2–5 (**CorretorIA**, **PrevêTema**, planos e pagamentos) são
+> **roadmap** — ainda não existem no código.
 
 ---
 
@@ -255,9 +257,93 @@ docker compose down -v       # para e APAGA os dados do banco
 
 ## ✅ Testes
 ```bash
-mvn test       # testes (requer Docker — usa Testcontainers para um PostgreSQL real)
-mvn verify     # testes + relatório de cobertura JaCoCo (target/site/jacoco/index.html)
+mvn test                  # testes + relatório JaCoCo (target/site/jacoco/index.html)
+mvn clean test jacoco:report   # idem, partindo do zero
+mvn verify                # testes + cobertura na fase verify
 ```
+
+A suíte tem **63 testes** e roda **com ou sem Docker**: os testes unitários e de fatia
+(Mockito, `@WebMvcTest`, `MockRestServiceServer`) não precisam de banco; o teste de
+integração `StudyAiApplicationTests` sobe um PostgreSQL real via **Testcontainers** e é
+**automaticamente pulado** quando o Docker não está disponível
+(`@Testcontainers(disabledWithoutDocker = true)`).
+
+### Cobertura de testes
+
+**Cobertura de linhas: 99,5%** (instruções 99,0%, ramos 86,7%) — bem acima do mínimo de 85%.
+Relatório versionado em [`cobertura/jacoco/index.html`](cobertura/jacoco/index.html)
+(gerado com JaCoCo; a classe de bootstrap `StudyAiApplication` é excluída da medição).
+
+---
+
+## 📋 Log de Auditoria
+
+Registra as ações de usuário relevantes do sistema, para rastreabilidade.
+
+- **O que é auditado:** as ações reais existentes hoje — **login** bem-sucedido,
+  **falha de login**, **logout** e **geração de flashcard** (`POST /flashcards/gerar`).
+- **Onde fica armazenado:** tabela **`audit_log`** (PostgreSQL, criada pela migração
+  Flyway `V4__audit_log.sql`). Campos principais: `usuario`, `acao`
+  (`LOGIN` / `LOGIN_FALHA` / `LOGOUT` / `GERAR_FLASHCARD`), `entidade`, `entidade_id`,
+  `detalhes`, `ip` e `data_hora`. É um registro *append-only* (apenas inserções).
+- **Como foi implementado:** abordagem **híbrida**, escolhida pelo escopo enxuto do
+  sistema (poucas ações de usuário):
+  - um **service dedicado** (`AuditLogService`) chamado explicitamente no ponto de
+    negócio — a geração de flashcard, no `FlashcardController` — onde a chamada é
+    direta e rastreável;
+  - **listeners de evento do Spring Security** para login/logout, porque o
+    `POST /login` é tratado internamente pelo framework (não há método de controller
+    onde inserir a chamada). Isso evita acoplar a configuração de segurança. AOP/
+    interceptor seria desnecessário para um único endpoint de negócio.
+
+  O `AuditLogService` resolve automaticamente o **usuário** (do `SecurityContextHolder`,
+  com *fallback* `anonimo`) e o **IP** (da requisição atual, respeitando
+  `X-Forwarded-For`). Falhas ao gravar o log nunca derrubam a operação principal.
+- **Classes participantes:**
+  - `src/main/java/br/ufpb/dsc/studyai/audit/AuditLog.java` (entidade)
+  - `src/main/java/br/ufpb/dsc/studyai/audit/AuditLogRepository.java`
+  - `src/main/java/br/ufpb/dsc/studyai/audit/AuditLogService.java`
+  - `src/main/java/br/ufpb/dsc/studyai/audit/AuthAuditListener.java` (login / falha de login)
+  - `src/main/java/br/ufpb/dsc/studyai/audit/AuditLogoutHandler.java` (logout)
+  - `src/main/resources/db/migration/V4__audit_log.sql` (schema)
+  - ponto de captura de negócio: `src/main/java/br/ufpb/dsc/studyai/controller/FlashcardController.java`
+
+---
+
+## 🔌 Integração com Serviço Externo
+
+> O **PostgreSQL** fornecido pela disciplina é infraestrutura básica e **não** conta como
+> integração externa. A integração que conta aqui é a de **IA**.
+
+- **Qual serviço:** geração de flashcards por **IA**, com **duas integrações** suportadas
+  via padrão **Strategy** — **Anthropic Claude** e **Google Gemini** — além de um **modo
+  demo** embutido (flashcards de exemplo) usado como *fallback*.
+- **Para que é usado:** transformar um texto em flashcards. O `FlashcardService` monta os
+  prompts (system + user) e delega ao `IAService`, que chama o provedor configurado e
+  devolve o JSON; o serviço faz o parse robusto e persiste o deck.
+- **Classes participantes:**
+  - `src/main/java/br/ufpb/dsc/studyai/service/IAService.java` (interface — contrato do provedor)
+  - `src/main/java/br/ufpb/dsc/studyai/service/IAServiceImpl.java` (demo / Anthropic / Gemini)
+  - `src/main/java/br/ufpb/dsc/studyai/config/IAProperties.java` (configuração e modo)
+  - `src/main/java/br/ufpb/dsc/studyai/config/IAClientConfig.java` (bean `RestClient` com timeout)
+  - `src/main/java/br/ufpb/dsc/studyai/service/FlashcardService.java` (orquestra a chamada e o parse)
+- **Como é configurado** (variáveis de ambiente — **sem valores reais no repositório**):
+
+  | Variável | Função |
+  |----------|--------|
+  | `STUDYAI_AI_MODO` | `demo` (padrão) ou `real` |
+  | `STUDYAI_AI_PROVEDOR` | `anthropic` ou `gemini` |
+  | `STUDYAI_AI_API_KEY` | chave do provedor (somente em ambiente, nunca versionada) |
+  | `STUDYAI_AI_MODELO` | modelo a usar no provedor |
+
+  **Importante para avaliação:** `IAProperties.isDemo()` retorna `true` por padrão quando
+  **não há chave configurada** (ou `modo=demo`). Ou seja, **a integração existe e está
+  pronta**, mas roda em **modo demo por padrão** — garantindo que a aplicação funcione sem
+  internet nem chave. Para exercitar a chamada real, defina `STUDYAI_AI_MODO=real` e as
+  demais variáveis acima.
+- **Nota de segurança:** a chave do Gemini é enviada no cabeçalho `x-goog-api-key`
+  (e **não** na query string `?key=...`), evitando que o segredo vaze em logs de acesso ou
+  proxies. O Anthropic já usa o cabeçalho `x-api-key`.
 
 ---
 

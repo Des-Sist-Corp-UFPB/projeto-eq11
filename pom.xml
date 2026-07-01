@@ -156,13 +156,22 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven-plugin.version}</version>
+                <configuration>
+                    <!-- A classe de bootstrap (apenas chama SpringApplication.run) não tem
+                         lógica testável e infla artificialmente os números — fica de fora. -->
+                    <excludes>
+                        <exclude>**/StudyAiApplication.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals><goal>prepare-agent</goal></goals>
                     </execution>
+                    <!-- Gera o relatório já na fase 'test', para que
+                         `mvn clean test jacoco:report` produza target/site/jacoco/. -->
                     <execution>
                         <id>report</id>
-                        <phase>verify</phase>
+                        <phase>test</phase>
                         <goals><goal>report</goal></goals>
                     </execution>
                 </executions>

@@ -1,0 +1,21 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+studyai,br.ufpb.dsc.studyai.service,IAServiceImpl,6,247,5,14,0,51,5,10,0,5
+studyai,br.ufpb.dsc.studyai.service,FlashcardService,4,287,3,29,0,59,3,24,0,11
+studyai,br.ufpb.dsc.studyai.service,FlashcardService.new TypeReference() {...},0,3,0,0,0,1,0,1,0,1
+studyai,br.ufpb.dsc.studyai.config,IAProperties,0,66,0,4,0,22,0,14,0,12
+studyai,br.ufpb.dsc.studyai.config,GlobalModelAttributes,0,6,0,0,0,2,0,2,0,2
+studyai,br.ufpb.dsc.studyai.config,IAClientConfig,0,34,0,0,0,10,0,3,0,3
+studyai,br.ufpb.dsc.studyai.config,SecurityConfig,0,121,0,0,0,29,0,9,0,9
+studyai,br.ufpb.dsc.studyai.exception,IAIndisponivelException,0,9,0,0,0,4,0,2,0,2
+studyai,br.ufpb.dsc.studyai.controller,FlashcardController,0,147,0,2,0,38,0,7,0,6
+studyai,br.ufpb.dsc.studyai.controller,PingController,0,12,0,0,0,3,0,2,0,2
+studyai,br.ufpb.dsc.studyai.controller,HomeController,0,44,0,0,0,10,0,2,0,2
+studyai,br.ufpb.dsc.studyai.controller,AuthController,0,5,0,0,0,2,0,2,0,2
+studyai,br.ufpb.dsc.studyai.dto,FlashcardDTO,0,9,0,0,0,1,0,1,0,1
+studyai,br.ufpb.dsc.studyai.dto,FlashcardRequest,0,15,0,0,0,1,0,1,0,1
+studyai,br.ufpb.dsc.studyai.audit,AuditLogService,0,129,2,10,0,27,2,11,0,7
+studyai,br.ufpb.dsc.studyai.audit,AuthAuditListener,0,22,0,0,0,7,0,3,0,3
+studyai,br.ufpb.dsc.studyai.audit,AuditLogoutHandler,0,15,0,2,0,6,0,3,0,2
+studyai,br.ufpb.dsc.studyai.audit,AuditLog,0,87,0,2,0,37,0,20,0,19
+studyai,br.ufpb.dsc.studyai.domain,Flashcard,0,50,0,0,0,22,0,12,0,12
+studyai,br.ufpb.dsc.studyai.domain,Deck,4,79,0,2,2,30,1,16,1,15

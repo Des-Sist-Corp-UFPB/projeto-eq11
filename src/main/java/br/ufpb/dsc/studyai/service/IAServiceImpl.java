@@ -3,14 +3,11 @@ package br.ufpb.dsc.studyai.service;
 import br.ufpb.dsc.studyai.config.IAProperties;
 import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -50,11 +47,11 @@ public class IAServiceImpl implements IAService {
             """;
 
     private final IAProperties props;
-    private final ObjectMapper objectMapper;
+    private final RestClient restClient;
 
-    public IAServiceImpl(IAProperties props, ObjectMapper objectMapper) {
+    public IAServiceImpl(IAProperties props, RestClient iaRestClient) {
         this.props = props;
-        this.objectMapper = objectMapper;
+        this.restClient = iaRestClient;
     }
 
     @Override
@@ -95,7 +92,7 @@ public class IAServiceImpl implements IAService {
                 "messages", new Object[]{Map.of("role", "user", "content", user)}
         );
 
-        JsonNode resposta = client().post()
+        JsonNode resposta = restClient.post()
                 .uri("https://api.anthropic.com/v1/messages")
                 .header("x-api-key", props.getApiKey())
                 .header("anthropic-version", "2023-06-01")
@@ -112,8 +109,10 @@ public class IAServiceImpl implements IAService {
     }
 
     private String chamarGemini(String system, String user) {
+        // A chave vai no header x-goog-api-key (e NÃO na query string ?key=...), evitando
+        // que o segredo vaze em logs de acesso/proxies.
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
-                + props.getModelo() + ":generateContent?key=" + props.getApiKey();
+                + props.getModelo() + ":generateContent";
 
         Map<String, Object> body = Map.of(
                 "systemInstruction", Map.of("parts", new Object[]{Map.of("text", system)}),
@@ -122,8 +121,9 @@ public class IAServiceImpl implements IAService {
                 }
         );
 
-        JsonNode resposta = client().post()
+        JsonNode resposta = restClient.post()
                 .uri(url)
+                .header("x-goog-api-key", props.getApiKey())
                 .header("content-type", "application/json")
                 .body(body)
                 .retrieve()
@@ -135,20 +135,5 @@ public class IAServiceImpl implements IAService {
             throw new IAIndisponivelException("Resposta inesperada do provedor Gemini.");
         }
         return texto.asText();
-    }
-
-    /**
-     * Cria um {@link RestClient} com timeout generoso (chamadas de LLM são lentas).
-     */
-    private RestClient client() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        Duration timeout = Duration.ofSeconds(props.getTimeoutSegundos());
-        factory.setConnectTimeout(timeout);
-        factory.setReadTimeout(timeout);
-        return RestClient.builder()
-                .requestFactory(factory)
-                .messageConverters(converters -> converters.add(0,
-                        new org.springframework.http.converter.json.MappingJackson2HttpMessageConverter(objectMapper)))
-                .build();
     }
 }

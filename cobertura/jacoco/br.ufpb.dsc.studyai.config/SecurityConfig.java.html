@@ -1,4 +1,4 @@
-package br.ufpb.dsc.studyai.config;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecurityConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.config</a> &gt; <span class="el_source">SecurityConfig.java</span></div><h1>SecurityConfig.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,21 +18,21 @@ import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
 /**
  * Configuração de segurança da aplicação usando Spring Security 6.
  *
- * <p><strong>Como o Spring Security funciona?</strong><br>
+ * &lt;p&gt;&lt;strong&gt;Como o Spring Security funciona?&lt;/strong&gt;&lt;br&gt;
  * O Spring Security é baseado em uma cadeia de filtros (Filter Chain) que intercepta
  * todas as requisições HTTP antes de chegarem ao Controller. Cada filtro tem uma
  * responsabilidade específica (autenticação, autorização, CSRF, etc.).
  *
- * <p><strong>Principais conceitos:</strong>
- * <ul>
- *   <li><strong>Authentication</strong>: Verifica quem é o usuário (login/senha).</li>
- *   <li><strong>Authorization</strong>: Verifica o que o usuário pode fazer (roles/permissões).</li>
- *   <li><strong>CSRF</strong>: Proteção contra Cross-Site Request Forgery.</li>
- *   <li><strong>PasswordEncoder</strong>: Nunca armazene senhas em texto puro! BCrypt aplica um
- *       hash com salt aleatório a cada chamada.</li>
- * </ul>
+ * &lt;p&gt;&lt;strong&gt;Principais conceitos:&lt;/strong&gt;
+ * &lt;ul&gt;
+ *   &lt;li&gt;&lt;strong&gt;Authentication&lt;/strong&gt;: Verifica quem é o usuário (login/senha).&lt;/li&gt;
+ *   &lt;li&gt;&lt;strong&gt;Authorization&lt;/strong&gt;: Verifica o que o usuário pode fazer (roles/permissões).&lt;/li&gt;
+ *   &lt;li&gt;&lt;strong&gt;CSRF&lt;/strong&gt;: Proteção contra Cross-Site Request Forgery.&lt;/li&gt;
+ *   &lt;li&gt;&lt;strong&gt;PasswordEncoder&lt;/strong&gt;: Nunca armazene senhas em texto puro! BCrypt aplica um
+ *       hash com salt aleatório a cada chamada.&lt;/li&gt;
+ * &lt;/ul&gt;
  *
- * <p><strong>{@code @Configuration} + {@code @EnableWebSecurity}:</strong><br>
+ * &lt;p&gt;&lt;strong&gt;{@code @Configuration} + {@code @EnableWebSecurity}:&lt;/strong&gt;&lt;br&gt;
  * {@code @Configuration} marca a classe como fonte de definição de beans.
  * {@code @EnableWebSecurity} ativa a integração do Spring Security com o contexto do Spring MVC.
  *
@@ -40,16 +40,16 @@ import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
  */
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig {
+<span class="fc" id="L43">public class SecurityConfig {</span>
 
     /**
      * Define o serviço de usuários em memória.
      *
-     * <p><strong>ATENÇÃO — APENAS PARA DESENVOLVIMENTO E DEMONSTRAÇÃO.</strong><br>
+     * &lt;p&gt;&lt;strong&gt;ATENÇÃO — APENAS PARA DESENVOLVIMENTO E DEMONSTRAÇÃO.&lt;/strong&gt;&lt;br&gt;
      * Em produção, substitua por um {@code UserDetailsService} que busca usuários do banco
      * de dados (ex.: via Spring Data JPA) e utilize senhas armazenadas com BCrypt.
      *
-     * <p>{@code User.builder()} é um fluent builder do Spring Security para criar usuários.
+     * &lt;p&gt;{@code User.builder()} é um fluent builder do Spring Security para criar usuários.
      * O password DEVE ser codificado — nunca passe a senha em texto puro.
      *
      * @param encoder codificador de senhas (injetado automaticamente pelo Spring)
@@ -57,53 +57,53 @@ public class SecurityConfig {
      */
     @Bean
     public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        UserDetails admin = User.builder()
-                .username("admin")
+<span class="fc" id="L60">        UserDetails admin = User.builder()</span>
+<span class="fc" id="L61">                .username(&quot;admin&quot;)</span>
                 // encode() aplica BCrypt na senha — o hash muda a cada chamada mas a verificação funciona
-                .password(encoder.encode("admin123"))
-                // ROLE_ADMIN é adicionado automaticamente; "roles" é um atalho para "authorities"
-                .roles("ADMIN")
-                .build();
+<span class="fc" id="L63">                .password(encoder.encode(&quot;admin123&quot;))</span>
+                // ROLE_ADMIN é adicionado automaticamente; &quot;roles&quot; é um atalho para &quot;authorities&quot;
+<span class="fc" id="L65">                .roles(&quot;ADMIN&quot;)</span>
+<span class="fc" id="L66">                .build();</span>
 
         // Usuário de demonstração (fase demo — em memória, ainda sem cadastro em banco)
-        UserDetails jeanmatheus = User.builder()
-                .username("jeanmatheus")
-                .password(encoder.encode("teste10"))
-                .roles("USER")
-                .build();
+<span class="fc" id="L69">        UserDetails jeanmatheus = User.builder()</span>
+<span class="fc" id="L70">                .username(&quot;jeanmatheus&quot;)</span>
+<span class="fc" id="L71">                .password(encoder.encode(&quot;teste10&quot;))</span>
+<span class="fc" id="L72">                .roles(&quot;USER&quot;)</span>
+<span class="fc" id="L73">                .build();</span>
 
-        return new InMemoryUserDetailsManager(admin, jeanmatheus);
+<span class="fc" id="L75">        return new InMemoryUserDetailsManager(admin, jeanmatheus);</span>
     }
 
     /**
      * Define o algoritmo de codificação de senhas.
      *
-     * <p><strong>Por que BCrypt?</strong><br>
-     * BCrypt é um algoritmo de hash adaptativo — você pode aumentar o "cost factor"
+     * &lt;p&gt;&lt;strong&gt;Por que BCrypt?&lt;/strong&gt;&lt;br&gt;
+     * BCrypt é um algoritmo de hash adaptativo — você pode aumentar o &quot;cost factor&quot;
      * conforme os computadores ficam mais rápidos, sem precisar re-hashear as senhas.
      * Ele também adiciona um salt aleatório automaticamente, impedindo ataques de
      * rainbow table (tabelas pré-computadas de hashes).
      *
-     * <p>Nunca use MD5, SHA-1 ou SHA-256 simples para senhas!
+     * &lt;p&gt;Nunca use MD5, SHA-1 ou SHA-256 simples para senhas!
      *
      * @return instância do BCryptPasswordEncoder
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+<span class="fc" id="L93">        return new BCryptPasswordEncoder();</span>
     }
 
     /**
      * Configura a cadeia de filtros de segurança HTTP.
      *
-     * <p>Este é o método central da configuração do Spring Security.
+     * &lt;p&gt;Este é o método central da configuração do Spring Security.
      * A API fluente do {@code HttpSecurity} permite configurar:
-     * <ul>
-     *   <li>Quais URLs são públicas e quais exigem autenticação</li>
-     *   <li>Como o login é feito (formulário, OAuth2, JWT, etc.)</li>
-     *   <li>Como o logout funciona</li>
-     *   <li>Configurações de CSRF, headers de segurança, etc.</li>
-     * </ul>
+     * &lt;ul&gt;
+     *   &lt;li&gt;Quais URLs são públicas e quais exigem autenticação&lt;/li&gt;
+     *   &lt;li&gt;Como o login é feito (formulário, OAuth2, JWT, etc.)&lt;/li&gt;
+     *   &lt;li&gt;Como o logout funciona&lt;/li&gt;
+     *   &lt;li&gt;Configurações de CSRF, headers de segurança, etc.&lt;/li&gt;
+     * &lt;/ul&gt;
      *
      * @param http              construtor de configuração de segurança HTTP
      * @param auditLogoutHandler handler aditivo que registra o logout na auditoria
@@ -112,38 +112,38 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuditLogoutHandler auditLogoutHandler) throws Exception {
-        http
+<span class="fc" id="L115">        http</span>
                 // === AUTORIZAÇÃO DE REQUISIÇÕES ===
-                .authorizeHttpRequests(auth -> auth
+<span class="fc" id="L117">                .authorizeHttpRequests(auth -&gt; auth</span>
                         // Recursos estáticos e health checks são públicos
                         // /webjars/** → Bootstrap, HTMX (servidos pelo Spring como recursos estáticos)
                         // /css/**, /js/** → arquivos estáticos personalizados
                         // /actuator/health → monitoramento sem autenticação
                         // /ping → health check público da equipe (painel de Status)
-                        .requestMatchers("/ping", "/webjars/**", "/css/**", "/js/**", "/actuator/health").permitAll()
+<span class="fc" id="L123">                        .requestMatchers(&quot;/ping&quot;, &quot;/webjars/**&quot;, &quot;/css/**&quot;, &quot;/js/**&quot;, &quot;/actuator/health&quot;).permitAll()</span>
                         // Qualquer outra requisição exige autenticação
-                        .anyRequest().authenticated()
+<span class="fc" id="L125">                        .anyRequest().authenticated()</span>
                 )
 
                 // === FORMULÁRIO DE LOGIN ===
-                .formLogin(form -> form
+<span class="fc" id="L129">                .formLogin(form -&gt; form</span>
                         // URL da página de login customizada (em vez da padrão do Spring Security)
-                        .loginPage("/login")
-                        // Após login bem-sucedido, redireciona para a home do StudyAI ("/")
+<span class="fc" id="L131">                        .loginPage(&quot;/login&quot;)</span>
+                        // Após login bem-sucedido, redireciona para a home do StudyAI (&quot;/&quot;)
                         // O segundo parâmetro (true) força sempre ir para esta URL,
                         // ignorando a URL que o usuário tentou acessar antes do login
-                        .defaultSuccessUrl("/", true)
+<span class="fc" id="L135">                        .defaultSuccessUrl(&quot;/&quot;, true)</span>
                         // A página de login deve ser acessível sem autenticação
-                        .permitAll()
+<span class="fc" id="L137">                        .permitAll()</span>
                 )
 
                 // === LOGOUT ===
-                .logout(logout -> logout
+<span class="fc" id="L141">                .logout(logout -&gt; logout</span>
                         // Após logout, redireciona para a página de login com mensagem
-                        .logoutSuccessUrl("/login?logout")
+<span class="fc" id="L143">                        .logoutSuccessUrl(&quot;/login?logout&quot;)</span>
                         // Handler ADITIVO: registra o logout na auditoria sem alterar o redirect acima
-                        .addLogoutHandler(auditLogoutHandler)
-                        .permitAll()
+<span class="fc" id="L145">                        .addLogoutHandler(auditLogoutHandler)</span>
+<span class="fc" id="L146">                        .permitAll()</span>
                 )
 
                 // === CSRF (Cross-Site Request Forgery) ===
@@ -154,16 +154,16 @@ public class SecurityConfig {
                 // o token é exposto em meta tags no layout e o studyai.js o envia no header
                 // a cada requisição HTMX (evento htmx:configRequest). Por isso não há nenhum
                 // endpoint isento aqui — a proteção vale para toda a aplicação.
-                .csrf(csrf -> {
-                });
+<span class="fc" id="L157">                .csrf(csrf -&gt; {</span>
+<span class="fc" id="L158">                });</span>
 
-        return http.build();
+<span class="fc" id="L160">        return http.build();</span>
     }
 
     /**
      * Expõe o {@code AuthenticationManager} como bean do Spring.
      *
-     * <p>Necessário quando você precisa injetar o {@code AuthenticationManager} em outras classes,
+     * &lt;p&gt;Necessário quando você precisa injetar o {@code AuthenticationManager} em outras classes,
      * como em um controller de API REST que faz autenticação programática.
      * Para este projeto educacional, serve como exemplo de como expor o bean.
      *
@@ -173,6 +173,7 @@ public class SecurityConfig {
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+<span class="fc" id="L176">        return config.getAuthenticationManager();</span>
     }
 }
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
