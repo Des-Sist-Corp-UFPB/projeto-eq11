@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import org.mockito.Mockito;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,12 +33,18 @@ class PingControllerTest {
     @MockBean
     private AuditLogoutHandler auditLogoutHandler;
 
+    @MockBean
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     void ping_deveResponder200JsonPublicamente_semLogin() throws Exception {
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.eq(Integer.class))).thenReturn(1);
+
         mockMvc.perform(get("/ping"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.status").value("ok"))
+                .andExpect(jsonPath("$.database").value("ok"))
                 .andExpect(jsonPath("$.service").value("eq11"))
                 // timestamp em ISO-8601 UTC (termina com Z), ex.: 2026-06-03T14:32:10Z
                 .andExpect(jsonPath("$.timestamp").value(org.hamcrest.Matchers.endsWith("Z")));
