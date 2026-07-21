@@ -1,9 +1,9 @@
--- Migração V4: Módulo de Log de Auditoria
+-- Migração V2: Módulo de Log de Auditoria
 -- Cria a tabela que registra ações relevantes de usuário (login, logout, geração
 -- de flashcard), atendendo ao requisito de auditoria da disciplina.
 --
 -- IMPORTANTE: nunca edite uma migração já aplicada (o Flyway valida o checksum).
--- Para mudar o schema, crie uma nova migração V5__...sql.
+-- Para mudar o schema, crie uma nova migração V3__...sql.
 --
 -- Registro append-only: a aplicação apenas insere; não altera nem remove linhas.
 

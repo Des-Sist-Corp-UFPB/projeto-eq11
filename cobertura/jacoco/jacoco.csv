@@ -1,14 +1,14 @@
 GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
-studyai,br.ufpb.dsc.studyai.service,IAServiceImpl,6,247,5,14,0,51,5,10,0,5
-studyai,br.ufpb.dsc.studyai.service,FlashcardService,4,287,3,29,0,59,3,24,0,11
-studyai,br.ufpb.dsc.studyai.service,FlashcardService.new TypeReference() {...},0,3,0,0,0,1,0,1,0,1
+studyai,br.ufpb.dsc.studyai.service,FlashcardService,19,196,9,13,1,33,8,10,0,7
+studyai,br.ufpb.dsc.studyai.config,LangChain4jConfig,52,0,6,0,15,0,5,0,2,0
 studyai,br.ufpb.dsc.studyai.config,IAProperties,0,66,0,4,0,22,0,14,0,12
+studyai,br.ufpb.dsc.studyai.config,LangChain4jConfig.new ChatLanguageModel() {...},7,0,0,0,2,0,2,0,2,0
 studyai,br.ufpb.dsc.studyai.config,GlobalModelAttributes,0,6,0,0,0,2,0,2,0,2
 studyai,br.ufpb.dsc.studyai.config,IAClientConfig,0,34,0,0,0,10,0,3,0,3
 studyai,br.ufpb.dsc.studyai.config,SecurityConfig,0,121,0,0,0,29,0,9,0,9
 studyai,br.ufpb.dsc.studyai.exception,IAIndisponivelException,0,9,0,0,0,4,0,2,0,2
 studyai,br.ufpb.dsc.studyai.controller,FlashcardController,0,147,0,2,0,38,0,7,0,6
-studyai,br.ufpb.dsc.studyai.controller,PingController,0,12,0,0,0,3,0,2,0,2
+studyai,br.ufpb.dsc.studyai.controller,PingController,16,40,0,0,4,10,0,2,0,2
 studyai,br.ufpb.dsc.studyai.controller,HomeController,0,44,0,0,0,10,0,2,0,2
 studyai,br.ufpb.dsc.studyai.controller,AuthController,0,5,0,0,0,2,0,2,0,2
 studyai,br.ufpb.dsc.studyai.dto,FlashcardDTO,0,9,0,0,0,1,0,1,0,1

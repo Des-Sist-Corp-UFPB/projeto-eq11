@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LangChain4jConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.config</a> &gt; <span class="el_source">LangChain4jConfig.java</span></div><h1>LangChain4jConfig.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.config;
+
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
+
+@Configuration
+<span class="nc" id="L14">public class LangChain4jConfig {</span>
+
+    @Bean
+    public ChatLanguageModel chatLanguageModel(IAProperties props) {
+<span class="nc bnc" id="L18" title="All 2 branches missed.">        if (props.isDemo()) {</span>
+            // Mock simples para o Spring conseguir injetar no @AiService sem falhar.
+            // O FlashcardService intercepta chamadas no modo demo antes de chegarem aqui.
+<span class="nc" id="L21">            return new ChatLanguageModel() {</span>
+                @Override
+                public dev.langchain4j.model.output.Response&lt;dev.langchain4j.data.message.AiMessage&gt; generate(java.util.List&lt;dev.langchain4j.data.message.ChatMessage&gt; messages) {
+<span class="nc" id="L24">                    return dev.langchain4j.model.output.Response.from(dev.langchain4j.data.message.AiMessage.from(&quot;demo&quot;));</span>
+                }
+            };
+        }
+
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        String provedor = props.getProvedor() != null ? props.getProvedor().toLowerCase() : &quot;&quot;;</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (&quot;gemini&quot;.equals(provedor)) {</span>
+<span class="nc" id="L31">            return GoogleAiGeminiChatModel.builder()</span>
+<span class="nc" id="L32">                    .apiKey(props.getApiKey())</span>
+<span class="nc" id="L33">                    .modelName(props.getModelo())</span>
+<span class="nc" id="L34">                    .timeout(Duration.ofSeconds(props.getTimeoutSegundos()))</span>
+<span class="nc" id="L35">                    .build();</span>
+        } else {
+            // Fallback para Anthropic, que é o padrão
+<span class="nc" id="L38">            return AnthropicChatModel.builder()</span>
+<span class="nc" id="L39">                    .apiKey(props.getApiKey())</span>
+<span class="nc" id="L40">                    .modelName(props.getModelo())</span>
+<span class="nc" id="L41">                    .timeout(Duration.ofSeconds(props.getTimeoutSegundos()))</span>
+<span class="nc" id="L42">                    .build();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
