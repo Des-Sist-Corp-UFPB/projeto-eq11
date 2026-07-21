@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.web.SecurityFilterChain;
 import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
 
@@ -43,36 +43,14 @@ import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
 public class SecurityConfig {
 
     /**
-     * Define o serviço de usuários em memória.
-     *
-     * <p><strong>ATENÇÃO — APENAS PARA DESENVOLVIMENTO E DEMONSTRAÇÃO.</strong><br>
-     * Em produção, substitua por um {@code UserDetailsService} que busca usuários do banco
-     * de dados (ex.: via Spring Data JPA) e utilize senhas armazenadas com BCrypt.
-     *
-     * <p>{@code User.builder()} é um fluent builder do Spring Security para criar usuários.
-     * O password DEVE ser codificado — nunca passe a senha em texto puro.
-     *
-     * @param encoder codificador de senhas (injetado automaticamente pelo Spring)
-     * @return gerenciador de usuários em memória
+     * Provedor de autenticação que utiliza o UsuarioService (banco de dados) e BCrypt.
      */
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        UserDetails admin = User.builder()
-                .username("admin")
-                // encode() aplica BCrypt na senha — o hash muda a cada chamada mas a verificação funciona
-                .password(encoder.encode("admin123"))
-                // ROLE_ADMIN é adicionado automaticamente; "roles" é um atalho para "authorities"
-                .roles("ADMIN")
-                .build();
-
-        // Usuário de demonstração (fase demo — em memória, ainda sem cadastro em banco)
-        UserDetails jeanmatheus = User.builder()
-                .username("jeanmatheus")
-                .password(encoder.encode("teste10"))
-                .roles("USER")
-                .build();
-
-        return new InMemoryUserDetailsManager(admin, jeanmatheus);
+    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder encoder) {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(encoder);
+        return authProvider;
     }
 
     /**
@@ -120,7 +98,7 @@ public class SecurityConfig {
                         // /css/**, /js/** → arquivos estáticos personalizados
                         // /actuator/health → monitoramento sem autenticação
                         // /ping → health check público da equipe (painel de Status)
-                        .requestMatchers("/ping", "/webjars/**", "/css/**", "/js/**", "/actuator/health").permitAll()
+                        .requestMatchers("/ping", "/webjars/**", "/css/**", "/js/**", "/actuator/health", "/cadastro", "/cadastro/salvar").permitAll()
                         // Qualquer outra requisição exige autenticação
                         .anyRequest().authenticated()
                 )

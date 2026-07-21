@@ -36,6 +36,9 @@ class PingControllerTest {
     @MockBean
     private JdbcTemplate jdbcTemplate;
 
+    @MockBean
+    private br.ufpb.dsc.studyai.service.UsuarioService usuarioService;
+
     @Test
     void ping_deveResponder200JsonPublicamente_semLogin() throws Exception {
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.eq(Integer.class))).thenReturn(1);

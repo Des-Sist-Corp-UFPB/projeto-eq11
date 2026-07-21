@@ -1,7 +1,12 @@
 package br.ufpb.dsc.studyai.controller;
 
+import br.ufpb.dsc.studyai.dto.UsuarioRequest;
+import br.ufpb.dsc.studyai.service.UsuarioService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * Controller de autenticação — gerencia as rotas relacionadas a login/logout.
@@ -27,6 +32,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class AuthController {
 
+    private final UsuarioService usuarioService;
+
+    public AuthController(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
+
     /**
      * Serve a página de login customizada.
      *
@@ -42,7 +53,28 @@ public class AuthController {
      */
     @GetMapping("/login")
     public String login() {
-        // Retorna o template em src/main/resources/templates/auth/login.html
         return "auth/login";
+    }
+
+    @GetMapping("/cadastro")
+    public String cadastro() {
+        return "auth/cadastro";
+    }
+
+    @PostMapping("/cadastro/salvar")
+    public String salvarCadastro(
+            @RequestParam String username,
+            @RequestParam String password,
+            @RequestParam String confirmPassword,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            usuarioService.cadastrarUsuario(new UsuarioRequest(username, password, confirmPassword));
+            redirectAttributes.addFlashAttribute("sucesso", "Cadastro realizado! Você já pode fazer login.");
+            return "redirect:/login";
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+            return "redirect:/cadastro";
+        }
     }
 }

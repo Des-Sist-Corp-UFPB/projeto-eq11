@@ -1,5 +1,5 @@
--- Migração V2: Módulo FlashIA — decks e flashcards
--- Cria as tabelas do primeiro módulo de IA do StudyAI (geração de flashcards).
+-- Migração V1: Init - Módulo FlashIA — decks e flashcards
+-- Cria as tabelas iniciais do StudyAI.
 --
 -- IMPORTANTE: nunca edite uma migração já aplicada (o Flyway valida o checksum).
 -- Para mudar o schema, crie uma nova migração V3__...sql.

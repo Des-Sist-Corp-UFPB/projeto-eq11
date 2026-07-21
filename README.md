@@ -270,7 +270,7 @@ integração `StudyAiApplicationTests` sobe um PostgreSQL real via **Testcontain
 
 ### Cobertura de testes
 
-**Cobertura de linhas: 99,5%** (instruções 99,0%, ramos 86,7%) — bem acima do mínimo de 85%.
+**Cobertura de testes total: 91%** (instruções 91%, ramos 67%) — bem acima do mínimo de 85% exigido.
 Relatório versionado em [`cobertura/jacoco/index.html`](cobertura/jacoco/index.html)
 (gerado com JaCoCo; a classe de bootstrap `StudyAiApplication` é excluída da medição).
 
