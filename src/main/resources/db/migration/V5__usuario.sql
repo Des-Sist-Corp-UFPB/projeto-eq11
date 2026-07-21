@@ -1,5 +1,5 @@
 CREATE TABLE usuario (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
     roles VARCHAR(255) NOT NULL
