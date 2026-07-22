@@ -46,11 +46,11 @@ class FlashcardServiceTest {
     @Test
     void gerar_happyPath_criaDeckComCartoesNaOrdem() {
         when(props.isDemo()).thenReturn(false);
-        when(flashcardAiService.gerarFlashcards(anyString(), anyString(), anyInt(), anyString()))
-                .thenReturn(List.of(
-                        new FlashcardDTO("Pergunta 1", "Resposta 1"),
-                        new FlashcardDTO("Pergunta 2", "Resposta 2")
-                ));
+        when(flashcardAiService.gerarFlashcards(any(), any(), anyInt(), any()))
+                .thenReturn(new br.ufpb.dsc.studyai.dto.FlashcardResponse(List.of(
+                        new FlashcardDTO("Pergunta 1?", "Resposta 1"),
+                        new FlashcardDTO("Pergunta 2?", "Resposta 2")
+                )));
 
         Deck deck = service.gerar(new FlashcardRequest("Cebraspe", "Direito", 2, "texto base"));
 
