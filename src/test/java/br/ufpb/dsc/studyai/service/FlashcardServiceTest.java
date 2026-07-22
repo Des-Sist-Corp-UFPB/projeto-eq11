@@ -75,7 +75,7 @@ class FlashcardServiceTest {
     void gerar_listaVaziaLancaExcecao() {
         when(props.isDemo()).thenReturn(false);
         when(flashcardAiService.gerarFlashcards(anyString(), anyString(), anyInt(), anyString()))
-                .thenReturn(List.of());
+                .thenReturn(new br.ufpb.dsc.studyai.dto.FlashcardResponse(List.of()));
 
         assertThatThrownBy(() -> service.gerar(new FlashcardRequest("Geral", "", 2, "x")))
                 .isInstanceOf(IAIndisponivelException.class);
