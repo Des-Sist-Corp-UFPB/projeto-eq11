@@ -33,6 +33,12 @@ public class LangChain4jConfig {
                     .modelName(props.getModelo())
                     .timeout(Duration.ofSeconds(props.getTimeoutSegundos()))
                     .build();
+        } else if ("openai".equals(provedor)) {
+            return dev.langchain4j.model.openai.OpenAiChatModel.builder()
+                    .apiKey(props.getApiKey())
+                    .modelName(props.getModelo() != null && !props.getModelo().isEmpty() ? props.getModelo() : "gpt-4o-mini")
+                    .timeout(Duration.ofSeconds(props.getTimeoutSegundos()))
+                    .build();
         } else {
             // Fallback para Anthropic, que é o padrão
             return AnthropicChatModel.builder()
