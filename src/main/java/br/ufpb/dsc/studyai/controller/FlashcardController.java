@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -72,9 +73,9 @@ public class FlashcardController {
      * @return página do FlashIA com o deck carregado (ou o placeholder, se não existir)
      */
     @GetMapping("/{id}")
-    public String abrirDeck(@PathVariable Long id, Model model) {
+    public String abrirDeck(@PathVariable Long id, Model model, Principal principal) {
         model.addAttribute("titulo", "FlashIA");
-        var deckOpt = flashcardService.buscarDeck(id);
+        var deckOpt = flashcardService.buscarDeck(id, principal.getName());
         if (deckOpt.isPresent()) {
             Deck deck = deckOpt.get();
             List<FlashcardDTO> cartoes = deck.getFlashcards().stream()
@@ -104,9 +105,9 @@ public class FlashcardController {
      * @return fragmento com os cartões, ou fragmento de erro amigável
      */
     @PostMapping("/gerar")
-    public String gerar(@ModelAttribute FlashcardRequest request, Model model) {
+    public String gerar(@ModelAttribute FlashcardRequest request, Model model, Principal principal) {
         try {
-            Deck deck = flashcardService.gerar(request);
+            Deck deck = flashcardService.gerar(request, principal.getName());
             List<FlashcardDTO> cartoes = deck.getFlashcards().stream()
                     .map(f -> new FlashcardDTO(f.getFrente(), f.getVerso()))
                     .toList();

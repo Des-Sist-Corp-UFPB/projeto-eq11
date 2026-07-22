@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -39,12 +40,17 @@ public class HomeController {
      * @return template da home
      */
     @GetMapping("/")
-    public String home(Model model) {
-        List<Deck> decks = deckRepository.findAllByOrderByCriadoEmDesc();
-        List<Redacao> redacoes = redacaoRepository.findAllByOrderByCriadoEmDesc();
+    public String home(Model model, Principal principal) {
+        String username = principal.getName();
+        List<Deck> decks = deckRepository.findAllByUsuarioUsernameOrderByCriadoEmDesc(username);
+        List<Redacao> redacoes = redacaoRepository.findAllByUsuarioUsernameOrderByCriadoEmDesc(username);
         
         model.addAttribute("totalDecks", decks.size());
-        model.addAttribute("totalFlashcards", flashcardRepository.count());
+        
+        // Count total flashcards manually based on user's decks or via a custom query.
+        // Let's just sum the flashcards of the fetched decks for simplicity and 100% isolation.
+        long totalFlashcards = decks.stream().mapToLong(d -> d.getFlashcards().size()).sum();
+        model.addAttribute("totalFlashcards", totalFlashcards);
         model.addAttribute("totalRedacoes", redacoes.size());
         
         // Mostra apenas os 5 recentes na home

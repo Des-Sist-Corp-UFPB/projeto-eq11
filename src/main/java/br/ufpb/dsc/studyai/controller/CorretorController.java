@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.security.Principal;
+
 @Controller
 @RequestMapping("/corretor")
 public class CorretorController {
@@ -32,9 +34,9 @@ public class CorretorController {
     }
 
     @GetMapping("/{id}")
-    public String abrirRedacao(@PathVariable Long id, Model model) {
+    public String abrirRedacao(@PathVariable Long id, Model model, Principal principal) {
         model.addAttribute("titulo", "CorretorIA");
-        var redacaoOpt = corretorService.buscarRedacao(id);
+        var redacaoOpt = corretorService.buscarRedacao(id, principal.getName());
         if (redacaoOpt.isPresent()) {
             model.addAttribute("redacao", redacaoOpt.get());
         }
@@ -42,9 +44,9 @@ public class CorretorController {
     }
 
     @PostMapping("/avaliar")
-    public String avaliar(@ModelAttribute CorretorRequest request, Model model) {
+    public String avaliar(@ModelAttribute CorretorRequest request, Model model, Principal principal) {
         try {
-            Redacao redacao = corretorService.avaliar(request);
+            Redacao redacao = corretorService.avaliar(request, principal.getName());
 
             auditLogService.registrar(
                     "AVALIAR_REDACAO", "redacao", redacao.getId(),

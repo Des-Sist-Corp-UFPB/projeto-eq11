@@ -31,13 +31,16 @@ class CorretorServiceTest {
     private RedacaoRepository redacaoRepository;
 
     @Mock
+    private br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository;
+
+    @Mock
     private IAProperties props;
 
     private CorretorService service;
 
     @BeforeEach
     void setUp() {
-        service = new CorretorService(corretorAiService, redacaoRepository, props);
+        service = new CorretorService(corretorAiService, redacaoRepository, usuarioRepository, props);
         lenient().when(redacaoRepository.save(any(Redacao.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -51,7 +54,7 @@ class CorretorServiceTest {
                         List.of(new CriterioAvaliacao("Gramatica", 180.0, "Quase perfeito"))
                 ));
 
-        Redacao redacao = service.avaliar(new CorretorRequest("ENEM", "Inteligência Artificial", "Meu texto..."));
+        Redacao redacao = service.avaliar(new CorretorRequest("ENEM", "Inteligência Artificial", "Meu texto..."), "admin");
 
         assertThat(redacao.getBanca()).isEqualTo("ENEM");
         assertThat(redacao.getNotaTotal()).isEqualTo(900.0);
@@ -65,7 +68,7 @@ class CorretorServiceTest {
     void avaliar_modoDemo_retornaRedacaoMock() {
         when(props.isDemo()).thenReturn(true);
 
-        Redacao redacao = service.avaliar(new CorretorRequest("FCC", "Saúde", "texto x"));
+        Redacao redacao = service.avaliar(new CorretorRequest("FCC", "Saúde", "texto x"), "admin");
 
         assertThat(redacao.getNotaTotal()).isEqualTo(850.0);
         assertThat(redacao.getCriterios()).hasSize(5); // O demo mock tem 5 itens
@@ -77,7 +80,7 @@ class CorretorServiceTest {
         when(corretorAiService.avaliarRedacao(any(), any(), any()))
                 .thenThrow(new RuntimeException("Erro genérico da IA"));
 
-        assertThatThrownBy(() -> service.avaliar(new CorretorRequest("Geral", "Tema", "texto")))
+        assertThatThrownBy(() -> service.avaliar(new CorretorRequest("Geral", "Tema", "texto"), "admin"))
                 .isInstanceOf(IAIndisponivelException.class)
                 .hasMessageContaining("Erro na IA (Corretor)");
     }

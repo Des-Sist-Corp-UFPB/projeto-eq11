@@ -33,13 +33,16 @@ class FlashcardServiceTest {
     private DeckRepository deckRepository;
 
     @Mock
+    private br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository;
+
+    @Mock
     private IAProperties props;
 
     private FlashcardService service;
 
     @BeforeEach
     void setUp() {
-        service = new FlashcardService(flashcardAiService, deckRepository, props);
+        service = new FlashcardService(flashcardAiService, deckRepository, usuarioRepository, props);
         lenient().when(deckRepository.save(any(Deck.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -52,7 +55,7 @@ class FlashcardServiceTest {
                         new FlashcardDTO("Pergunta 2", "Resposta 2")
                 )));
 
-        Deck deck = service.gerar(new FlashcardRequest("Cebraspe", "Direito", 2, "texto base"));
+        Deck deck = service.gerar(new FlashcardRequest("Cebraspe", "Direito", 2, "texto base"), "admin");
 
         assertThat(deck.getBanca()).isEqualTo("Cebraspe");
         assertThat(deck.getDisciplina()).isEqualTo("Direito");
@@ -66,7 +69,7 @@ class FlashcardServiceTest {
     void gerar_modoDemo_retornaCartoesMock() {
         when(props.isDemo()).thenReturn(true);
 
-        Deck deck = service.gerar(new FlashcardRequest("FGV", "Português", 5, "conteúdo"));
+        Deck deck = service.gerar(new FlashcardRequest("FGV", "Português", 5, "conteúdo"), "admin");
 
         assertThat(deck.getFlashcards()).hasSize(8); // O demo mock tem 8 itens hardcoded
     }
@@ -77,7 +80,7 @@ class FlashcardServiceTest {
         when(flashcardAiService.gerarFlashcards(anyString(), anyString(), anyInt(), anyString()))
                 .thenReturn(new br.ufpb.dsc.studyai.dto.FlashcardResponse(List.of()));
 
-        assertThatThrownBy(() -> service.gerar(new FlashcardRequest("Geral", "", 2, "x")))
+        assertThatThrownBy(() -> service.gerar(new FlashcardRequest("Geral", "", 2, "x"), "admin"))
                 .isInstanceOf(IAIndisponivelException.class);
     }
 
@@ -87,7 +90,7 @@ class FlashcardServiceTest {
         when(flashcardAiService.gerarFlashcards(anyString(), anyString(), anyInt(), anyString()))
                 .thenThrow(new RuntimeException("Erro genérico da IA"));
 
-        assertThatThrownBy(() -> service.gerar(new FlashcardRequest("Geral", "", 2, "x")))
+        assertThatThrownBy(() -> service.gerar(new FlashcardRequest("Geral", "", 2, "x"), "admin"))
                 .isInstanceOf(IAIndisponivelException.class);
     }
 
@@ -95,9 +98,9 @@ class FlashcardServiceTest {
     void buscarDeck_presente_inicializaCartoes() {
         Deck deck = new Deck("T", "Geral", "");
         deck.adicionarFlashcard(new br.ufpb.dsc.studyai.domain.Flashcard("F", "V", 0));
-        when(deckRepository.findById(1L)).thenReturn(Optional.of(deck));
+        when(deckRepository.findByIdAndUsuarioUsername(1L, "admin")).thenReturn(Optional.of(deck));
 
-        Optional<Deck> resultado = service.buscarDeck(1L);
+        Optional<Deck> resultado = service.buscarDeck(1L, "admin");
 
         assertThat(resultado).isPresent();
         assertThat(resultado.get().getFlashcards()).hasSize(1);
@@ -105,8 +108,8 @@ class FlashcardServiceTest {
 
     @Test
     void buscarDeck_ausente_devolveVazio() {
-        when(deckRepository.findById(99L)).thenReturn(Optional.empty());
+        when(deckRepository.findByIdAndUsuarioUsername(99L, "admin")).thenReturn(Optional.empty());
 
-        assertThat(service.buscarDeck(99L)).isEmpty();
+        assertThat(service.buscarDeck(99L, "admin")).isEmpty();
     }
 }

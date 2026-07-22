@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
+import java.security.Principal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,12 +54,14 @@ class FlashcardControllerTest {
     @Test
     void abrirDeck_existente_carregaCartoesEJson() {
         FlashcardService service = mock(FlashcardService.class);
-        when(service.buscarDeck(10L)).thenReturn(Optional.of(deckComCartoes()));
+        when(service.buscarDeck(10L, "admin")).thenReturn(Optional.of(deckComCartoes()));
         FlashcardController controller = new FlashcardController(
                 service, new ObjectMapper(), mock(AuditLogService.class));
         Model model = new ConcurrentModel();
 
-        String view = controller.abrirDeck(10L, model);
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("admin");
+        String view = controller.abrirDeck(10L, model, principal);
 
         assertThat(view).isEqualTo("studyai/flashcards");
         assertThat(model.getAttribute("deck")).isNotNull();
@@ -68,12 +71,14 @@ class FlashcardControllerTest {
     @Test
     void abrirDeck_inexistente_caiNoPlaceholder() {
         FlashcardService service = mock(FlashcardService.class);
-        when(service.buscarDeck(99L)).thenReturn(Optional.empty());
+        when(service.buscarDeck(99L, "admin")).thenReturn(Optional.empty());
         FlashcardController controller = new FlashcardController(
                 service, new ObjectMapper(), mock(AuditLogService.class));
         Model model = new ConcurrentModel();
 
-        String view = controller.abrirDeck(99L, model);
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("admin");
+        String view = controller.abrirDeck(99L, model, principal);
 
         assertThat(view).isEqualTo("studyai/flashcards");
         assertThat(model.getAttribute("deck")).isNull();
@@ -82,13 +87,15 @@ class FlashcardControllerTest {
     @Test
     void abrirDeck_erroDeSerializacao_defineDeckComoNulo() throws Exception {
         FlashcardService service = mock(FlashcardService.class);
-        when(service.buscarDeck(10L)).thenReturn(Optional.of(deckComCartoes()));
+        when(service.buscarDeck(10L, "admin")).thenReturn(Optional.of(deckComCartoes()));
         ObjectMapper mapper = mock(ObjectMapper.class);
         when(mapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("falha") {});
         FlashcardController controller = new FlashcardController(service, mapper, mock(AuditLogService.class));
         Model model = new ConcurrentModel();
 
-        String view = controller.abrirDeck(10L, model);
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("admin");
+        String view = controller.abrirDeck(10L, model, principal);
 
         assertThat(view).isEqualTo("studyai/flashcards");
         // O catch redefine "deck" para null para a página cair no placeholder em vez de quebrar
@@ -98,12 +105,14 @@ class FlashcardControllerTest {
     @Test
     void gerar_sucesso_retornaFragmentoERegistraAuditoria() {
         FlashcardService service = mock(FlashcardService.class);
-        when(service.gerar(any(FlashcardRequest.class))).thenReturn(deckComCartoes());
+        when(service.gerar(any(FlashcardRequest.class), eq("admin"))).thenReturn(deckComCartoes());
         AuditLogService audit = mock(AuditLogService.class);
         FlashcardController controller = new FlashcardController(service, new ObjectMapper(), audit);
         Model model = new ConcurrentModel();
 
-        String view = controller.gerar(new FlashcardRequest("Cebraspe", "Direito", 2, "txt"), model);
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("admin");
+        String view = controller.gerar(new FlashcardRequest("Cebraspe", "Direito", 2, "txt"), model, principal);
 
         assertThat(view).isEqualTo("studyai/fragments/flashcard-result :: cards");
         assertThat(model.getAttribute("cartoes")).isNotNull();
@@ -113,13 +122,15 @@ class FlashcardControllerTest {
     @Test
     void gerar_iaIndisponivel_retornaFragmentoDeErro_eNaoAudita() {
         FlashcardService service = mock(FlashcardService.class);
-        when(service.gerar(any(FlashcardRequest.class)))
+        when(service.gerar(any(FlashcardRequest.class), eq("admin")))
                 .thenThrow(new IAIndisponivelException("IA fora do ar"));
         AuditLogService audit = mock(AuditLogService.class);
         FlashcardController controller = new FlashcardController(service, new ObjectMapper(), audit);
         Model model = new ConcurrentModel();
 
-        String view = controller.gerar(new FlashcardRequest("Geral", "", 5, "txt"), model);
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("admin");
+        String view = controller.gerar(new FlashcardRequest("Geral", "", 5, "txt"), model, principal);
 
         assertThat(view).isEqualTo("studyai/fragments/flashcard-result :: erro");
         assertThat(model.getAttribute("mensagem")).isEqualTo("IA fora do ar");
@@ -129,13 +140,15 @@ class FlashcardControllerTest {
     @Test
     void gerar_erroDeSerializacao_retornaFragmentoDeErro() throws Exception {
         FlashcardService service = mock(FlashcardService.class);
-        when(service.gerar(any(FlashcardRequest.class))).thenReturn(deckComCartoes());
+        when(service.gerar(any(FlashcardRequest.class), eq("admin"))).thenReturn(deckComCartoes());
         ObjectMapper mapper = mock(ObjectMapper.class);
         when(mapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("falha") {});
         FlashcardController controller = new FlashcardController(service, mapper, mock(AuditLogService.class));
         Model model = new ConcurrentModel();
 
-        String view = controller.gerar(new FlashcardRequest("Geral", "", 5, "txt"), model);
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("admin");
+        String view = controller.gerar(new FlashcardRequest("Geral", "", 5, "txt"), model, principal);
 
         assertThat(view).isEqualTo("studyai/fragments/flashcard-result :: erro");
         assertThat(model.getAttribute("mensagem")).asString().contains("preparar os cartões");

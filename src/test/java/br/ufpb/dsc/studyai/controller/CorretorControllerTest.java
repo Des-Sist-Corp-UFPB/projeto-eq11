@@ -12,6 +12,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -47,10 +48,16 @@ class CorretorControllerTest {
         Redacao redacao = new Redacao("ENEM", "Tema X", "Texto Y", 1000.0, "Perfeito");
         redacao.setId(1L);
 
-        when(corretorService.avaliar(any())).thenReturn(redacao);
+        when(corretorService.avaliar(any(), anyString())).thenReturn(redacao);
 
         mockMvc.perform(post("/corretor/avaliar")
                         .with(csrf())
+                        .principal(new java.security.Principal() {
+                            @Override
+                            public String getName() {
+                                return "user";
+                            }
+                        })
                         .param("banca", "ENEM")
                         .param("tema", "Tema X")
                         .param("texto", "Texto Y"))
@@ -62,10 +69,16 @@ class CorretorControllerTest {
     @Test
     @WithMockUser
     void avaliar_iaIndisponivel_retornaFragmentoDeErro() throws Exception {
-        when(corretorService.avaliar(any())).thenThrow(new IAIndisponivelException("Fora do ar"));
+        when(corretorService.avaliar(any(), anyString())).thenThrow(new IAIndisponivelException("Fora do ar"));
 
         mockMvc.perform(post("/corretor/avaliar")
                         .with(csrf())
+                        .principal(new java.security.Principal() {
+                            @Override
+                            public String getName() {
+                                return "user";
+                            }
+                        })
                         .param("banca", "ENEM")
                         .param("tema", "Tema X")
                         .param("texto", "Texto Y"))
