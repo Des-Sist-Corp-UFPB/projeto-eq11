@@ -21,5 +21,9 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
      *
      * @return decks ordenados por data de criação decrescente
      */
-    List<Deck> findAllByOrderByCriadoEmDesc();
+    List<Deck> findAllByUsuarioUsernameOrderByCriadoEmDesc(String username);
+
+    java.util.Optional<Deck> findByIdAndUsuarioUsername(Long id, String username);
+
+    long countByUsuarioUsername(String username);
 }

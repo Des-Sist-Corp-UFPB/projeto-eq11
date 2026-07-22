@@ -31,6 +31,10 @@ public class Redacao {
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
+
     @OneToMany(mappedBy = "redacao", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Criterio> criterios = new ArrayList<>();
 
@@ -121,5 +125,13 @@ public class Redacao {
 
     public void setCriterios(List<Criterio> criterios) {
         this.criterios = criterios;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 }

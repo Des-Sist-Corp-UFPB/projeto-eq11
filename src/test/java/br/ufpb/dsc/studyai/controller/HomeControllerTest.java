@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -26,20 +27,32 @@ class HomeControllerTest {
         br.ufpb.dsc.studyai.repository.RedacaoRepository redacaoRepository = mock(br.ufpb.dsc.studyai.repository.RedacaoRepository.class);
 
         List<Deck> seteDecks = IntStream.range(0, 7)
-                .mapToObj(i -> new Deck("Deck " + i, "Geral", ""))
+                .mapToObj(i -> {
+                    Deck d = new Deck("Deck " + i, "Geral", "");
+                    d.adicionarFlashcard(new br.ufpb.dsc.studyai.domain.Flashcard("F", "V", 0));
+                    d.adicionarFlashcard(new br.ufpb.dsc.studyai.domain.Flashcard("F", "V", 1));
+                    d.adicionarFlashcard(new br.ufpb.dsc.studyai.domain.Flashcard("F", "V", 2));
+                    d.adicionarFlashcard(new br.ufpb.dsc.studyai.domain.Flashcard("F", "V", 3));
+                    d.adicionarFlashcard(new br.ufpb.dsc.studyai.domain.Flashcard("F", "V", 4));
+                    d.adicionarFlashcard(new br.ufpb.dsc.studyai.domain.Flashcard("F", "V", 5));
+                    return d;
+                })
                 .toList();
-        when(deckRepository.findAllByOrderByCriadoEmDesc()).thenReturn(seteDecks);
+        when(deckRepository.findAllByUsuarioUsernameOrderByCriadoEmDesc("user")).thenReturn(seteDecks);
         when(flashcardRepository.count()).thenReturn(42L);
 
         List<br.ufpb.dsc.studyai.domain.Redacao> oitoRedacoes = IntStream.range(0, 8)
                 .mapToObj(i -> new br.ufpb.dsc.studyai.domain.Redacao())
                 .toList();
-        when(redacaoRepository.findAllByOrderByCriadoEmDesc()).thenReturn(oitoRedacoes);
+        when(redacaoRepository.findAllByUsuarioUsernameOrderByCriadoEmDesc("user")).thenReturn(oitoRedacoes);
+
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("user");
 
         HomeController controller = new HomeController(deckRepository, flashcardRepository, redacaoRepository);
         Model model = new ConcurrentModel();
 
-        String view = controller.home(model);
+        String view = controller.home(model, principal);
 
         assertThat(view).isEqualTo("studyai/home");
         assertThat(model.getAttribute("totalDecks")).isEqualTo(7);

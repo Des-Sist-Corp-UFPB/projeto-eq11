@@ -22,20 +22,23 @@ public class CorretorService {
 
     private final CorretorAiService corretorAiService;
     private final RedacaoRepository redacaoRepository;
+    private final br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository;
     private final IAProperties iaProperties;
 
     public CorretorService(CorretorAiService corretorAiService,
                            RedacaoRepository redacaoRepository,
+                           br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository,
                            IAProperties iaProperties) {
         this.corretorAiService = corretorAiService;
         this.redacaoRepository = redacaoRepository;
+        this.usuarioRepository = usuarioRepository;
         this.iaProperties = iaProperties;
     }
 
     @Transactional
-    public Redacao avaliar(CorretorRequest request) {
+    public Redacao avaliar(CorretorRequest request, String username) {
         if (iaProperties.isDemo()) {
-            return gerarAvaliacaoMock(request);
+            return gerarAvaliacaoMock(request, username);
         }
 
         try {
@@ -51,6 +54,7 @@ public class CorretorService {
                     response.notaTotal(),
                     response.comentarioGeral()
             );
+            usuarioRepository.findByUsername(username).ifPresent(redacao::setUsuario);
 
             if (response.criterios() != null) {
                 response.criterios().forEach(c -> {
@@ -67,14 +71,14 @@ public class CorretorService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<Redacao> buscarRedacao(Long id) {
-        Optional<Redacao> redacaoOpt = redacaoRepository.findById(id);
+    public Optional<Redacao> buscarRedacao(Long id, String username) {
+        Optional<Redacao> redacaoOpt = redacaoRepository.findByIdAndUsuarioUsername(id, username);
         // Força a inicialização da lazy collection dentro da transação
         redacaoOpt.ifPresent(r -> r.getCriterios().size());
         return redacaoOpt;
     }
 
-    private Redacao gerarAvaliacaoMock(CorretorRequest request) {
+    private Redacao gerarAvaliacaoMock(CorretorRequest request, String username) {
         log.info("CorretorIA operando em MODO DEMO.");
         Redacao mock = new Redacao(
                 request.banca(),
@@ -83,6 +87,7 @@ public class CorretorService {
                 850.0,
                 "Texto bem estruturado, mas apresenta falhas de coesão no segundo parágrafo e desvios gramaticais pontuais."
         );
+        usuarioRepository.findByUsername(username).ifPresent(mock::setUsuario);
 
         mock.adicionarCriterio(new Criterio("Competência 1 (Gramática)", 160.0, "Alguns erros de pontuação e ortografia."));
         mock.adicionarCriterio(new Criterio("Competência 2 (Tema/Estrutura)", 200.0, "Excelente domínio do tema e estrutura dissertativa correta."));

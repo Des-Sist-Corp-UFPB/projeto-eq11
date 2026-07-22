@@ -40,6 +40,10 @@ public class Deck {
     @Column(name = "criado_em", nullable = false, updatable = false)
     private Instant criadoEm;
 
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
+
     /**
      * Cartões do deck.
      *
@@ -125,5 +129,13 @@ public class Deck {
 
     public void setFlashcards(List<Flashcard> flashcards) {
         this.flashcards = flashcards;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 }

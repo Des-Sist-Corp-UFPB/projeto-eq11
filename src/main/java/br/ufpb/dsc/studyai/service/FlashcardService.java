@@ -26,16 +26,18 @@ public class FlashcardService {
 
     private final FlashcardAiService flashcardAiService;
     private final DeckRepository deckRepository;
+    private final br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository;
     private final IAProperties props;
 
-    public FlashcardService(FlashcardAiService flashcardAiService, DeckRepository deckRepository, IAProperties props) {
+    public FlashcardService(FlashcardAiService flashcardAiService, DeckRepository deckRepository, br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository, IAProperties props) {
         this.flashcardAiService = flashcardAiService;
         this.deckRepository = deckRepository;
+        this.usuarioRepository = usuarioRepository;
         this.props = props;
     }
 
     @Transactional
-    public Deck gerar(FlashcardRequest request) {
+    public Deck gerar(FlashcardRequest request, String username) {
         String banca = StringUtils.hasText(request.banca()) ? request.banca().trim() : "Geral";
         String disciplina = request.disciplina() == null ? "" : request.disciplina().trim();
         int quantidade = request.quantidade() <= 0 ? 15 : Math.min(request.quantidade(), 30);
@@ -63,6 +65,7 @@ public class FlashcardService {
         }
 
         Deck deck = new Deck(montarTitulo(banca, disciplina), banca, disciplina);
+        usuarioRepository.findByUsername(username).ifPresent(deck::setUsuario);
         int ordem = 0;
         for (FlashcardDTO dto : cartoes) {
             deck.adicionarFlashcard(new Flashcard(dto.frente(), dto.verso(), ordem++));
@@ -70,8 +73,8 @@ public class FlashcardService {
         return deckRepository.save(deck);
     }
 
-    public Optional<Deck> buscarDeck(Long id) {
-        return deckRepository.findById(id).map(deck -> {
+    public Optional<Deck> buscarDeck(Long id, String username) {
+        return deckRepository.findByIdAndUsuarioUsername(id, username).map(deck -> {
             deck.getFlashcards().size(); // força a inicialização da coleção lazy
             return deck;
         });
