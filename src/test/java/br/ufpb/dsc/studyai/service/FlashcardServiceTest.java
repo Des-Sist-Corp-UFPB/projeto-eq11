@@ -48,8 +48,8 @@ class FlashcardServiceTest {
         when(props.isDemo()).thenReturn(false);
         when(flashcardAiService.gerarFlashcards(any(), any(), anyInt(), any()))
                 .thenReturn(new br.ufpb.dsc.studyai.dto.FlashcardResponse(List.of(
-                        new FlashcardDTO("Pergunta 1?", "Resposta 1"),
-                        new FlashcardDTO("Pergunta 2?", "Resposta 2")
+                        new FlashcardDTO("Pergunta 1", "Resposta 1"),
+                        new FlashcardDTO("Pergunta 2", "Resposta 2")
                 )));
 
         Deck deck = service.gerar(new FlashcardRequest("Cebraspe", "Direito", 2, "texto base"));
