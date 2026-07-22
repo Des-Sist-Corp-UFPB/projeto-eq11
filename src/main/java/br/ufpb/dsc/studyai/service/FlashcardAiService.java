@@ -25,7 +25,7 @@ public interface FlashcardAiService {
             TEXTO:
             {{texto}}
             """)
-    List<FlashcardDTO> gerarFlashcards(
+    br.ufpb.dsc.studyai.dto.FlashcardResponse gerarFlashcards(
             @V("banca") String banca,
             @V("disciplina") String disciplina,
             @V("quantidade") int quantidade,

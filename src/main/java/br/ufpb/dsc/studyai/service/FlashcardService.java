@@ -51,7 +51,8 @@ public class FlashcardService {
             cartoes = getFlashcardsDemo();
         } else {
             try {
-                cartoes = flashcardAiService.gerarFlashcards(banca, disciplina, quantidade, texto);
+                br.ufpb.dsc.studyai.dto.FlashcardResponse response = flashcardAiService.gerarFlashcards(banca, disciplina, quantidade, texto);
+                cartoes = response != null ? response.cartoes() : null;
                 if (cartoes == null || cartoes.isEmpty()) {
                     throw new IAIndisponivelException("A IA não gerou nenhum flashcard válido.");
                 }
