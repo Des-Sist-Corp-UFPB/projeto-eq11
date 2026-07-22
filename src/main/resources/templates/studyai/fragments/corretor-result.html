@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!--
+  FRAGMENTO DE SUCESSO: AVALIAÇÃO DA REDAÇÃO
+-->
+<div th:fragment="avaliacao" class="card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+        <div>
+            <div class="card-title">Resultado da Correção</div>
+            <div style="color:var(--text-muted); font-size:0.9rem;" th:text="${'Banca: ' + redacao.banca + ' | Data: ' + #temporals.format(redacao.criadoEm, 'dd/MM/yyyy')}">Banca: ENEM | Data: 22/07/2026</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Nota Final</div>
+            <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);" th:text="${#numbers.formatDecimal(redacao.notaTotal, 1, 1)}">850.0</div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+        <h4 style="margin-bottom: 8px; color: var(--text-color); font-size: 1.1rem;">Comentário Geral</h4>
+        <div style="background: rgba(255,255,255,0.03); padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary-color); line-height: 1.5; color: var(--text-color);" th:text="${redacao.comentarioGeral}">
+            O comentário geral da IA aparecerá aqui.
+        </div>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(redacao.criterios)}">
+        <h4 style="margin-bottom: 12px; color: var(--text-color); font-size: 1.1rem;">Detalhamento por Critérios</h4>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div th:each="criterio : ${redacao.criterios}" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="color: var(--text-color);" th:text="${criterio.nome}">Competência 1</strong>
+                    <span class="badge badge-purple" style="font-size: 0.9rem;" th:text="${#numbers.formatDecimal(criterio.nota, 1, 1)}">160.0</span>
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.4;" th:text="${criterio.comentario}">
+                    Comentário específico para este critério.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--
+  FRAGMENTO DE ERRO
+-->
+<div th:fragment="erro" class="card" style="border-left:4px solid #ef4444">
+    <div class="card-title" style="color:#ef4444;display:flex;align-items:center;gap:8px">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        Erro ao corrigir redação
+    </div>
+    <div style="color:var(--text-muted);margin-top:10px" th:text="${mensagem}">
+        Ocorreu um erro interno.
+    </div>
+</div>
+
+</body>
+</html>
