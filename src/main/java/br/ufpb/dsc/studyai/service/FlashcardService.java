@@ -56,7 +56,8 @@ public class FlashcardService {
                     throw new IAIndisponivelException("A IA não gerou nenhum flashcard válido.");
                 }
             } catch (Exception e) {
-                throw new IAIndisponivelException("Não foi possível contatar o serviço de IA agora. Tente novamente em instantes.", e);
+                e.printStackTrace();
+                throw new IAIndisponivelException("Erro na IA: " + e.getMessage(), e);
             }
         }
 
