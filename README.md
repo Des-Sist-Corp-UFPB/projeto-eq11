@@ -63,13 +63,14 @@ O desenvolvimento é incremental. Cada fase entrega algo demonstrável.
 | **1.5** | **Auditoria + cobertura de testes** — módulo de log de auditoria (`audit_log`), integração de IA documentada e cobertura ≥ 85% | ✅ Concluída |
 | **2** | **CorretorIA** — correção ENEM/Discursiva/OAB; entidade `Correcao` com `payload` JSONB; 3 endpoints + fragmentos de resultado | ⬜ Planejada (roadmap) |
 | **3** | **PrevêTema + Histórico** — entidade `Previsao`, seed do histórico ENEM, página de histórico paginada | ⬜ Planejada (roadmap) |
-| **4** | **Autenticação em banco + Planos** — entidade `Usuario` (`UserDetailsService`), planos GRATUITO/PRO e limites de uso impostos no servidor | ⬜ Planejada (roadmap) |
+| **4** | **Autenticação Avançada + OAuth2** — entidade `Usuario` (`UserDetailsService`), login por E-mail ou Username e integração social com **Google OAuth2** | ✅ Concluída |
+| **4.5** | **Planos e limites** — planos GRATUITO/PRO e limites de uso impostos no servidor | ⬜ Planejada (roadmap) |
 | **5** | **Hardening & Pagamentos** — webhook de pagamento, ajustes finais de SAST e deploy | ⬜ Planejada (roadmap) |
 
 > ✅ **O que está implementado hoje:** o módulo **FlashIA** (geração de flashcards por IA)
-> ponta a ponta, sobre uma base corporativa segura, com **log de auditoria** e **cobertura
-> de testes ≥ 85%**. As Fases 2–5 (**CorretorIA**, **PrevêTema**, planos e pagamentos) são
-> **roadmap** — ainda não existem no código.
+> ponta a ponta, **Log de auditoria** e **Autenticação Completa** (banco local e Google OAuth2),
+> com cobertura de testes ≥ 85%. As Fases 2–3 e planos (**CorretorIA**, **PrevêTema** e
+> pagamentos) são **roadmap** — ainda não existem no código.
 
 ---
 
@@ -181,9 +182,9 @@ projeto-eq11/
 │   ├── application.yml             # Config base + studyai.ia.*
 │   ├── application-dev.yml         # Perfil local (mvn spring-boot:run)
 │   ├── application-prod.yml        # Perfil container (lê DB_*)
-│   ├── db/migration/               # V1__, V2__deck_flashcard, V3__drop_produto
+│   ├── db/migration/               # Scripts SQL versionados (inclui V9__add_email_e_oauth_to_usuario)
 │   ├── static/                     # css/studyai.css, js/studyai.js
-│   └── templates/                  # auth/login + studyai/{layout,home,flashcards,fragments}
+│   └── templates/                  # auth/login, auth/cadastro + studyai/{layout,home,flashcards}
 └── docs/                           # PITCH, SECURITY, CONVENTIONS, arquitetura
 ```
 
@@ -232,7 +233,7 @@ docker compose down -v       # para e APAGA os dados do banco
 | Recurso | Em container (Compose) | Local (`mvn spring-boot:run`) |
 |---------|------------------------|-------------------------------|
 | Aplicação | http://127.0.0.1:8111 | http://localhost:8080 |
-| Login | `admin` / `admin123` | `admin` / `admin123` |
+| Login | Cadastro manual (Username/E-mail) ou **Google OAuth2** | Cadastro manual ou **Google OAuth2** |
 | Adminer (perfil `dev`) | http://127.0.0.1:8112 | — |
 | Health check | `…:8111/actuator/health` | `…:8080/actuator/health` |
 
@@ -249,6 +250,8 @@ docker compose down -v       # para e APAGA os dados do banco
 | `V1__criar_tabela_produto.sql` | Tabela de exemplo do boilerplate (legado) |
 | `V2__deck_flashcard.sql` | Tabelas `deck` e `flashcard` (módulo FlashIA) |
 | `V3__drop_produto.sql` | Remove a tabela `produto` (não usada pelo StudyAI) |
+| `V4__audit_log.sql` | Tabela para logs de auditoria |
+| `V9__add_email_e_oauth_to_usuario.sql`| Adiciona colunas `email` e `provider` para integração OAuth2 e login estendido |
 
 > ⚠️ **Nunca edite uma migration já aplicada** — o Flyway valida o checksum. Para
 > mudar o schema, crie uma nova (`V4__...sql`).
@@ -313,9 +316,10 @@ Registra as ações de usuário relevantes do sistema, para rastreabilidade.
 ## 🔌 Integração com Serviço Externo
 
 > O **PostgreSQL** fornecido pela disciplina é infraestrutura básica e **não** conta como
-> integração externa. A integração que conta aqui é a de **IA**.
+> integração externa. As integrações implementadas são de **IA** e **Autenticação (OAuth2)**.
 
-- **Qual serviço:** geração de flashcards por **IA**, com **duas integrações** suportadas
+### 1. IA (Geração de Flashcards)
+- **Qual serviço:** geração de flashcards por IA (Anthropic Claude, Google Gemini e modo demo).
   via padrão **Strategy** — **Anthropic Claude** e **Google Gemini** — além de um **modo
   demo** embutido (flashcards de exemplo) usado como *fallback*.
 - **Para que é usado:** transformar um texto em flashcards. O `FlashcardService` monta os
@@ -341,11 +345,18 @@ Registra as ações de usuário relevantes do sistema, para rastreabilidade.
   pronta**, mas roda em **modo demo por padrão** — garantindo que a aplicação funcione sem
   internet nem chave. Para exercitar a chamada real, defina `STUDYAI_AI_MODO=real` e as
   demais variáveis acima.
-- **Nota de segurança:** a chave do Gemini é enviada no cabeçalho `x-goog-api-key`
-  (e **não** na query string `?key=...`), evitando que o segredo vaze em logs de acesso ou
-  proxies. O Anthropic já usa o cabeçalho `x-api-key`.
+- **Nota de segurança:** a chave do Gemini é enviada no cabeçalho `x-goog-api-key`. O Anthropic já usa o cabeçalho `x-api-key`.
 
----
+### 2. Autenticação (Google OAuth2)
+- **Qual serviço:** Google Identity Services (OAuth2).
+- **Para que é usado:** Permitir que os usuários criem conta e façam login na plataforma utilizando sua conta Google existente de forma rápida e segura (Single Sign-On).
+- **Como é configurado:** via variáveis de ambiente no `.env`:
+  ```env
+  GOOGLE_CLIENT_ID=seu_client_id_aqui
+  GOOGLE_CLIENT_SECRET=seu_client_secret_aqui
+  ```
+- **Fluxo:** O Spring Security gerencia a comunicação com o Google automaticamente. O provedor recupera o E-mail e o Nome do usuário e passa para o nosso `CustomOAuth2UserService` que registra ou autentica o usuário no banco local.
+
 
 ## 🔒 Segurança (SAST)
 ```bash
@@ -379,6 +390,8 @@ O pipeline ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) roda
   DB_NAME=eq11
   DB_USER=eq11
   DB_PASSWORD=<senha-forte>
+  GOOGLE_CLIENT_ID=<id-gerado-no-cloud>
+  GOOGLE_CLIENT_SECRET=<secret-gerado-no-cloud>
   ```
   > Regra de formatação: **sem espaços** ao redor do `=`.
 
