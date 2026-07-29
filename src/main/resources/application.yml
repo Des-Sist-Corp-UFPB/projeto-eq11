@@ -3,8 +3,6 @@ spring:
     name: studyai
   profiles:
     active: dev
-server:
-  forward-headers-strategy: framework
 spring:
   security:
     oauth2:
