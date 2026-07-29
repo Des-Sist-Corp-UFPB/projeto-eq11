@@ -93,7 +93,7 @@ nav{padding:16px 12px;flex:1}
 /* INPUTS */
 textarea,input,select{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.15s}
 textarea{width:100%;padding:14px 16px;resize:vertical;min-height:120px;line-height:1.6}
-input[type=text],input[type=number],input[type=password]{width:100%;padding:10px 14px;height:40px}
+input[type=text],input[type=number],input[type=email],input[type=password]{width:100%;padding:10px 14px;height:40px}
 select{padding:8px 12px;height:38px;cursor:pointer;width:100%}
 textarea:focus,input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
 ::placeholder{color:var(--text3)}

@@ -23,8 +23,8 @@ public class UsuarioService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+        return usuarioRepository.findByUsernameOrEmail(username, username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário ou e-mail não encontrado: " + username));
     }
 
     @Transactional
@@ -32,13 +32,15 @@ public class UsuarioService implements UserDetailsService {
         if (!request.password().equals(request.confirmPassword())) {
             throw new IllegalArgumentException("As senhas não conferem.");
         }
-        if (usuarioRepository.findByUsername(request.username()).isPresent()) {
-            throw new IllegalArgumentException("Usuário já existe.");
+        if (usuarioRepository.findByUsernameOrEmail(request.username(), request.email() != null ? request.email() : "").isPresent()) {
+            throw new IllegalArgumentException("Nome de usuário ou e-mail já existe.");
         }
 
         Usuario usuario = new Usuario();
         usuario.setUsername(request.username());
+        usuario.setEmail(request.email());
         usuario.setPassword(passwordEncoder.encode(request.password()));
+        usuario.setProvider("LOCAL");
         usuario.setRoles("ROLE_USER");
 
         usuarioRepository.save(usuario);

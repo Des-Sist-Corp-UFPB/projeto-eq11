@@ -64,12 +64,13 @@ public class AuthController {
     @PostMapping("/cadastro/salvar")
     public String salvarCadastro(
             @RequestParam String username,
+            @RequestParam(required = false) String email,
             @RequestParam String password,
             @RequestParam String confirmPassword,
             RedirectAttributes redirectAttributes) {
 
         try {
-            usuarioService.cadastrarUsuario(new UsuarioRequest(username, password, confirmPassword));
+            usuarioService.cadastrarUsuario(new UsuarioRequest(username, email, password, confirmPassword));
             redirectAttributes.addFlashAttribute("sucesso", "Cadastro realizado! Você já pode fazer login.");
             return "redirect:/login";
         } catch (IllegalArgumentException e) {

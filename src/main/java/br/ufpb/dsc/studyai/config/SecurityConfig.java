@@ -89,7 +89,7 @@ public class SecurityConfig {
      * @throws Exception se ocorrer erro na configuração
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuditLogoutHandler auditLogoutHandler) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuditLogoutHandler auditLogoutHandler, br.ufpb.dsc.studyai.service.CustomOAuth2UserService customOAuth2UserService) throws Exception {
         http
                 // === AUTORIZAÇÃO DE REQUISIÇÕES ===
                 .authorizeHttpRequests(auth -> auth
@@ -98,7 +98,7 @@ public class SecurityConfig {
                         // /css/**, /js/** → arquivos estáticos personalizados
                         // /actuator/health → monitoramento sem autenticação
                         // /ping → health check público da equipe (painel de Status)
-                        .requestMatchers("/ping", "/webjars/**", "/css/**", "/js/**", "/actuator/health", "/cadastro", "/cadastro/salvar").permitAll()
+                        .requestMatchers("/ping", "/webjars/**", "/css/**", "/js/**", "/actuator/health", "/cadastro", "/cadastro/salvar", "/login").permitAll()
                         // Qualquer outra requisição exige autenticação
                         .anyRequest().authenticated()
                 )
@@ -113,6 +113,15 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/", true)
                         // A página de login deve ser acessível sem autenticação
                         .permitAll()
+                )
+
+                // === OAUTH2 (GOOGLE) ===
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/", true)
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
                 )
 
                 // === LOGOUT ===

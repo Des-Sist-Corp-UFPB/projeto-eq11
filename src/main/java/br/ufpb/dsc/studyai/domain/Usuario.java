@@ -25,6 +25,12 @@ public class Usuario implements UserDetails {
     @Column(nullable = false)
     private String roles; // Ex: "ROLE_USER", "ROLE_ADMIN,ROLE_USER"
 
+    @Column(length = 100)
+    private String email;
+
+    @Column(length = 20)
+    private String provider = "LOCAL";
+
     // Construtor vazio exigido pelo JPA
     public Usuario() {
     }
@@ -49,6 +55,22 @@ public class Usuario implements UserDetails {
 
     public void setRoles(String roles) {
         this.roles = roles;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 
     public void setUsername(String username) {
