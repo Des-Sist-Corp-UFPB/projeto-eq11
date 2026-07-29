@@ -1,9 +1,11 @@
+server:
+  forward-headers-strategy: framework
+
 spring:
   application:
     name: studyai
   profiles:
     active: dev
-spring:
   security:
     oauth2:
       client:
