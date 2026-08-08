@@ -12,6 +12,7 @@ Abaixo estão todos os artigos disponíveis na nossa base de conhecimento:
 - [**02. Configuração de Ambiente**](02_ENVIRONMENT_SETUP.md): Como subir o banco e a aplicação via Docker, configurar as variáveis de IA e rodar o projeto localmente.
 - [**03. Módulo: FlashIA**](03_MODULE_FLASHIA.md): Deep dive em como o gerador de flashcards se integra com a IA e persiste os baralhos de forma segura.
 - [**04. Módulo: CorretorIA**](04_MODULE_CORRETORIA.md): Deep dive no corretor de redações, lidando com JSON complexo e prevenindo *Type Erasure* através de DTOs rigorosos no LangChain4j.
+- [**10. Módulo: RoadmapIA**](10_MODULE_ROADMAPIA.md): Deep dive no gerador de planos de estudo, e por que o calendário é calculado no servidor em vez de confiar na aritmética de datas da IA.
 - [**05. Estratégia de Testes**](05_TESTING_STRATEGY.md): Como garantir os 85% de cobertura usando MockMvc, Mockito, e banco de dados real via TestContainers.
 - [**06. CI/CD e Deployment**](06_CI_CD_DEPLOYMENT.md): Como funcionam as Actions do GitHub para build, análise de segurança e push pro Registry (GHCR).
 - [**07. Segurança e Auditoria**](07_SECURITY.md): SAST (Semgrep, SpotBugs), proteção do top 10 OWASP e logs de auditoria automatizados.

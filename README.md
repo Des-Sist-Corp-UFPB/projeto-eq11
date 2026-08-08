@@ -30,11 +30,12 @@ Artificial rodando de forma **segura no backend**, dentro de um sistema corporat
 ## 🔭 Visão geral
 
 O StudyAI resolve um problema concreto de quem estuda para concursos e ENEM: **converter
-conteúdo bruto em estudo ativo** (flashcards, correção de redação, previsão de temas), sem
+conteúdo bruto em estudo ativo** (flashcards, correção de redação e plano de estudos), sem
 expor a chave de IA no navegador e guardando o histórico do aluno.
 
-A regra de ouro do projeto: **a chamada de IA é sempre feita no servidor** (`IAService`),
-com a chave em variável de ambiente. O navegador nunca toca em segredos.
+A regra de ouro do projeto: **a chamada de IA é sempre feita no servidor** (interfaces
+`@AiService` do LangChain4j), com a chave em variável de ambiente. O navegador nunca toca
+em segredos.
 
 ---
 
@@ -43,12 +44,12 @@ com a chave em variável de ambiente. O navegador nunca toca em segredos.
 | Módulo | O que faz | Status |
 |--------|-----------|:------:|
 | **FlashIA** | Gera flashcards (pergunta/resposta) a partir de um texto, salva em decks e exibe com flip + carrossel | ✅ **Funcionando** |
-| **CorretorIA** | Corrige redação ENEM (5 competências), discursiva Cebraspe e peça OAB | 🔜 Planejado |
-| **PrevêTema** | Projeta os temas mais prováveis da próxima prova a partir do histórico | 🔜 Planejado |
+| **CorretorIA** | Corrige redação por banca (ENEM, Cebraspe, Vunesp e genérica), com nota e comentário por critério | ✅ **Funcionando** |
+| **RoadmapIA** | A partir de um questionário de perfil, monta um plano de estudos para o ENEM semana a semana, do primeiro dia até a data da prova | ✅ **Funcionando** |
 
-> 💡 **Modo demo:** o FlashIA funciona **sem internet e sem chave de API**
+> 💡 **Modo demo:** os três módulos funcionam **sem internet e sem chave de API**
 > (`studyai.ia.modo=demo`, padrão). Com uma chave configurada, o mesmo fluxo chama o
-> provedor real (Anthropic ou Gemini).
+> provedor real (Anthropic, Gemini ou OpenAI).
 
 ---
 
@@ -59,18 +60,17 @@ O desenvolvimento é incremental. Cada fase entrega algo demonstrável.
 | Fase | Entrega | Status |
 |:----:|---------|:------:|
 | **0** | **Fundação** — scaffold, identidade visual (tema escuro, Syne + DM Sans), layout Thymeleaf, login (Spring Security), Docker e CI/CD configurados | ✅ Concluída |
-| **1** | **FlashIA ponta a ponta** — domínio `Deck`/`Flashcard`, migration Flyway, `IAService` (interface) com modo demo + provedores reais, persistência, fragmentos HTMX, home com estatísticas reais | ✅ Concluída |
+| **1** | **FlashIA ponta a ponta** — domínio `Deck`/`Flashcard`, migration Flyway, integração de IA via LangChain4j (`@AiService`) com modo demo + provedores reais, persistência, fragmentos HTMX, home com estatísticas reais | ✅ Concluída |
 | **1.5** | **Auditoria + cobertura de testes** — módulo de log de auditoria (`audit_log`), integração de IA documentada e cobertura ≥ 85% | ✅ Concluída |
-| **2** | **CorretorIA** — correção ENEM/Discursiva/OAB; entidade `Correcao` com `payload` JSONB; 3 endpoints + fragmentos de resultado | ⬜ Planejada (roadmap) |
-| **3** | **PrevêTema + Histórico** — entidade `Previsao`, seed do histórico ENEM, página de histórico paginada | ⬜ Planejada (roadmap) |
-| **4** | **Autenticação Avançada + OAuth2** — entidade `Usuario` (`UserDetailsService`), login por E-mail ou Username e integração social com **Google OAuth2** | ✅ Concluída |
+| **2** | **CorretorIA** — correção por banca; entidades `Redacao`/`Criterio`; endpoints + fragmentos de resultado | ✅ Concluída |
+| **3** | **Autenticação Avançada + OAuth2** — entidade `Usuario` (`UserDetailsService`), login por E-mail ou Username e integração social com **Google OAuth2** | ✅ Concluída |
+| **4** | **RoadmapIA** — questionário de perfil, entidades `Roadmap`/`SemanaEstudo`/`TarefaEstudo`, cronograma semanal em acordeão | ✅ Concluída |
 | **4.5** | **Planos e limites** — planos GRATUITO/PRO e limites de uso impostos no servidor | ⬜ Planejada (roadmap) |
 | **5** | **Hardening & Pagamentos** — webhook de pagamento, ajustes finais de SAST e deploy | ⬜ Planejada (roadmap) |
 
-> ✅ **O que está implementado hoje:** o módulo **FlashIA** (geração de flashcards por IA)
-> ponta a ponta, **Log de auditoria** e **Autenticação Completa** (banco local e Google OAuth2),
-> com cobertura de testes ≥ 85%. As Fases 2–3 e planos (**CorretorIA**, **PrevêTema** e
-> pagamentos) são **roadmap** — ainda não existem no código.
+> ✅ **O que está implementado hoje:** os três módulos de IA (**FlashIA**, **CorretorIA** e
+> **RoadmapIA**) ponta a ponta, **Log de auditoria** e **Autenticação Completa** (banco local
+> e Google OAuth2). A Fase 4.5 (planos e pagamentos) é **roadmap** — ainda não existe no código.
 
 ---
 
@@ -87,7 +87,7 @@ O desenvolvimento é incremental. Cada fase entrega algo demonstrável.
 | Banco de dados | PostgreSQL | 16 |
 | Migrations | Flyway | 11.x |
 | Segurança | Spring Security | 6.x |
-| Cliente HTTP (IA) | Spring `RestClient` | 6.x |
+| Integração com IA | LangChain4j (`@AiService`) | 0.36.2 |
 | JSON | Jackson | 2.x |
 | Build | Maven | 3.9+ |
 | Testes | JUnit 5 + Testcontainers | — |
@@ -110,36 +110,48 @@ responsabilidades são separadas em camadas bem definidas:
 └───────────────┬─────────────────────────────────────────────┘
                 │  HTTP / Ajax (hx-post, hx-target)
 ┌───────────────▼─────────── controller/ ─────────────────────┐
-│  HomeController · FlashcardController · AuthController        │  ← entrada HTTP
+│  Home · Flashcard · Corretor · Roadmap · Auth · Ping          │  ← entrada HTTP
 └───────────────┬─────────────────────────────────────────────┘
 ┌───────────────▼─────────── service/ ────────────────────────┐
-│  FlashcardService  ──►  IAService (interface)                 │  ← regra de negócio
-│                          ├─ modo DEMO (offline)               │     (@Transactional)
-│                          └─ provedor real (Anthropic|Gemini)  │
+│  FlashcardService · CorretorService · RoadmapService          │  ← regra de negócio
+│         │                                                     │     (@Transactional)
+│         └──► @AiService (LangChain4j — interface declarativa)  │
+│                ├─ modo DEMO (offline, sem chave)              │
+│                └─ provedor real (Anthropic|Gemini|OpenAI)     │
 └───────────────┬─────────────────────────────────────────────┘
 ┌───────────────▼─────────── repository/ ─────────────────────┐
-│  DeckRepository · FlashcardRepository (Spring Data JPA)       │  ← acesso a dados
+│  Deck · Redacao · Roadmap · Usuario (Spring Data JPA)         │  ← acesso a dados
 └───────────────┬─────────────────────────────────────────────┘
 ┌───────────────▼─────────── domain/ ─────────────────────────┐
-│  Deck (1 ──► N) Flashcard   →   PostgreSQL (schema via Flyway)│  ← entidades JPA
+│  Deck→Flashcard · Redacao→Criterio · Roadmap→Semana→Tarefa    │  ← entidades JPA
+│                        →   PostgreSQL (schema via Flyway)     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Fluxo de uma requisição (FlashIA)
 1. O formulário envia `hx-post="/flashcards/gerar"` (HTMX).
 2. `FlashcardController` recebe um `FlashcardRequest` (record).
-3. `FlashcardService` monta os prompts e chama `IAService.completar(system, user)`.
-4. O `IAService` retorna cartões de **exemplo** (modo demo) **ou** chama o provedor real.
-5. O serviço faz **parse robusto do JSON** (remove cercas markdown, valida com Jackson).
-6. Persiste `Deck` + `Flashcard` e devolve um **fragmento Thymeleaf** com os cartões.
-7. O HTMX troca apenas o `#flash-resultado` — sem recarregar a página.
+3. `FlashcardService` decide entre o **modo demo** (cartões de exemplo, sem rede) e a IA real.
+4. Na IA real, chama `FlashcardAiService.gerarFlashcards(...)` — o LangChain4j envia os prompts
+   e devolve um `FlashcardResponse` já mapeado, sem parse manual de JSON.
+5. Persiste `Deck` + `Flashcard` e devolve um **fragmento Thymeleaf** com os cartões.
+6. O HTMX troca apenas o `#flash-resultado` — sem recarregar a página.
+
+### Fluxo de uma requisição (RoadmapIA)
+1. O questionário envia `hx-post="/roadmap/gerar"` (HTMX).
+2. `RoadmapController` recebe um `RoadmapRequest` (record).
+3. `RoadmapService` valida o período e **calcula as semanas em Java** (a IA não faz conta de data).
+4. Chama `RoadmapAiService.gerarRoadmap(...)` e **valida o que voltou** (datas dentro da semana,
+   durações dentro do tempo disponível, semanas ausentes preenchidas com o plano padrão).
+5. Persiste `Roadmap` → `SemanaEstudo` → `TarefaEstudo` e devolve o fragmento do cronograma.
+6. O HTMX troca apenas o `#roadmap-resultado`; as semanas viram um acordeão client-side.
 
 ### Padrões de projeto aplicados
 - **Injeção de Dependência** (construtor) em todos os componentes Spring.
-- **DTO** com `records` Java imutáveis (`FlashcardRequest`, `FlashcardDTO`).
+- **DTO** com `records` Java imutáveis (`FlashcardRequest`, `RoadmapRequest`, ...).
 - **Repository** (Spring Data JPA) — interfaces sem implementação manual.
-- **Strategy** — `IAService` abstrai o provedor (demo / Anthropic / Gemini) sem
-  acoplar a regra de negócio a um fornecedor específico.
+- **Strategy** — `LangChain4jConfig` escolhe o provedor (Anthropic / Gemini / OpenAI / demo)
+  sem acoplar a regra de negócio a um fornecedor específico.
 - **Service Layer transacional** — `@Transactional(readOnly = true)` por padrão,
   escrita explícita onde há persistência.
 - **Configuration Properties** — `IAProperties` (`@ConfigurationProperties("studyai.ia")`).
@@ -171,21 +183,22 @@ projeto-eq11/
 │   └── Dockerfile
 ├── src/main/java/br/ufpb/dsc/studyai/
 │   ├── StudyAiApplication.java     # Classe principal (@SpringBootApplication)
-│   ├── config/                     # SecurityConfig, IAProperties, GlobalModelAttributes
-│   ├── controller/                 # Home, Flashcard, Auth
-│   ├── domain/                     # Deck, Flashcard
-│   ├── dto/                        # FlashcardRequest, FlashcardDTO (records)
+│   ├── audit/                      # AuditLog, AuditLogService, listeners
+│   ├── config/                     # SecurityConfig, LangChain4jConfig, IAProperties
+│   ├── controller/                 # Home, Flashcard, Corretor, Roadmap, Auth, Ping
+│   ├── domain/                     # Deck/Flashcard, Redacao/Criterio, Roadmap/Semana/Tarefa, Usuario
+│   ├── dto/                        # Records de entrada e saída de cada módulo
 │   ├── exception/                  # IAIndisponivelException
-│   ├── repository/                 # DeckRepository, FlashcardRepository
-│   └── service/                    # IAService, IAServiceImpl, FlashcardService
+│   ├── repository/                 # Deck, Flashcard, Redacao, Roadmap, Usuario
+│   └── service/                    # *Service (negócio) + *AiService (@AiService LangChain4j)
 ├── src/main/resources/
 │   ├── application.yml             # Config base + studyai.ia.*
 │   ├── application-dev.yml         # Perfil local (mvn spring-boot:run)
 │   ├── application-prod.yml        # Perfil container (lê DB_*)
-│   ├── db/migration/               # Scripts SQL versionados (inclui V9__add_email_e_oauth_to_usuario)
+│   ├── db/migration/               # Scripts SQL versionados (V1 … V10)
 │   ├── static/                     # css/studyai.css, js/studyai.js
-│   └── templates/                  # auth/login, auth/cadastro + studyai/{layout,home,flashcards}
-└── docs/                           # PITCH, SECURITY, CONVENTIONS, arquitetura
+│   └── templates/                  # auth/{login,cadastro} + studyai/{layout,home,flashcards,corretor,roadmap}
+└── wiki/                           # Arquitetura, módulos, testes, CI/CD, segurança, convenções
 ```
 
 ---
@@ -247,14 +260,20 @@ docker compose down -v       # para e APAGA os dados do banco
 
 | Migration | Descrição |
 |-----------|-----------|
-| `V1__criar_tabela_produto.sql` | Tabela de exemplo do boilerplate (legado) |
-| `V2__deck_flashcard.sql` | Tabelas `deck` e `flashcard` (módulo FlashIA) |
-| `V3__drop_produto.sql` | Remove a tabela `produto` (não usada pelo StudyAI) |
-| `V4__audit_log.sql` | Tabela para logs de auditoria |
-| `V9__add_email_e_oauth_to_usuario.sql`| Adiciona colunas `email` e `provider` para integração OAuth2 e login estendido |
+| `V1__init.sql` | Tabelas `deck` e `flashcard` (módulo FlashIA) |
+| `V2__audit_log.sql` | Tabela `audit_log` para a trilha de auditoria |
+| `V5__usuario.sql` | Tabela `usuario` + usuário `admin` inicial |
+| `V6__redacao.sql` | Tabelas `redacao` e `redacao_criterio` (módulo CorretorIA) |
+| `V7__fix_redacao_types.sql` | Ajusta as colunas de nota para `DOUBLE PRECISION` |
+| `V8__add_usuario_to_deck_and_redacao.sql` | Adiciona `usuario_id` para isolar os dados por usuário |
+| `V9__add_email_e_oauth_to_usuario.sql` | Adiciona `email` e `provider` (login OAuth2) e libera `password` nulo |
+| `V10__roadmap.sql` | Tabelas `roadmap`, `roadmap_semana` e `roadmap_tarefa` (módulo RoadmapIA) |
+
+> ℹ️ Os números `V3` e `V4` não existem: foram consumidos por migrations descartadas
+> durante o desenvolvimento. O Flyway não exige numeração contígua.
 
 > ⚠️ **Nunca edite uma migration já aplicada** — o Flyway valida o checksum. Para
-> mudar o schema, crie uma nova (`V4__...sql`).
+> mudar o schema, crie uma nova (`V11__...sql`).
 
 ---
 
@@ -265,7 +284,7 @@ mvn clean test jacoco:report   # idem, partindo do zero
 mvn verify                # testes + cobertura na fase verify
 ```
 
-A suíte tem **63 testes** e roda **com ou sem Docker**: os testes unitários e de fatia
+A suíte tem **72 testes** e roda **com ou sem Docker**: os testes unitários e de fatia
 (Mockito, `@WebMvcTest`, `MockRestServiceServer`) não precisam de banco; o teste de
 integração `StudyAiApplicationTests` sobe um PostgreSQL real via **Testcontainers** e é
 **automaticamente pulado** quando o Docker não está disponível
@@ -284,11 +303,14 @@ Relatório versionado em [`cobertura/jacoco/index.html`](cobertura/jacoco/index.
 Registra as ações de usuário relevantes do sistema, para rastreabilidade.
 
 - **O que é auditado:** as ações reais existentes hoje — **login** bem-sucedido,
-  **falha de login**, **logout** e **geração de flashcard** (`POST /flashcards/gerar`).
+  **falha de login**, **logout**, **geração de flashcard** (`POST /flashcards/gerar`),
+  **avaliação de redação** (`POST /corretor/avaliar`) e **geração de plano de estudos**
+  (`POST /roadmap/gerar`).
 - **Onde fica armazenado:** tabela **`audit_log`** (PostgreSQL, criada pela migração
-  Flyway `V4__audit_log.sql`). Campos principais: `usuario`, `acao`
-  (`LOGIN` / `LOGIN_FALHA` / `LOGOUT` / `GERAR_FLASHCARD`), `entidade`, `entidade_id`,
-  `detalhes`, `ip` e `data_hora`. É um registro *append-only* (apenas inserções).
+  Flyway `V2__audit_log.sql`). Campos principais: `usuario`, `acao`
+  (`LOGIN` / `LOGIN_FALHA` / `LOGOUT` / `GERAR_FLASHCARD` / `AVALIAR_REDACAO` /
+  `GERAR_ROADMAP`), `entidade`, `entidade_id`, `detalhes`, `ip` e `data_hora`.
+  É um registro *append-only* (apenas inserções).
 - **Como foi implementado:** abordagem **híbrida**, escolhida pelo escopo enxuto do
   sistema (poucas ações de usuário):
   - um **service dedicado** (`AuditLogService`) chamado explicitamente no ponto de
@@ -308,8 +330,9 @@ Registra as ações de usuário relevantes do sistema, para rastreabilidade.
   - `src/main/java/br/ufpb/dsc/studyai/audit/AuditLogService.java`
   - `src/main/java/br/ufpb/dsc/studyai/audit/AuthAuditListener.java` (login / falha de login)
   - `src/main/java/br/ufpb/dsc/studyai/audit/AuditLogoutHandler.java` (logout)
-  - `src/main/resources/db/migration/V4__audit_log.sql` (schema)
-  - ponto de captura de negócio: `src/main/java/br/ufpb/dsc/studyai/controller/FlashcardController.java`
+  - `src/main/resources/db/migration/V2__audit_log.sql` (schema)
+  - pontos de captura de negócio: `FlashcardController`, `CorretorController` e
+    `RoadmapController` (em `src/main/java/br/ufpb/dsc/studyai/controller/`)
 
 ---
 
@@ -318,19 +341,20 @@ Registra as ações de usuário relevantes do sistema, para rastreabilidade.
 > O **PostgreSQL** fornecido pela disciplina é infraestrutura básica e **não** conta como
 > integração externa. As integrações implementadas são de **IA** e **Autenticação (OAuth2)**.
 
-### 1. IA (Geração de Flashcards)
-- **Qual serviço:** geração de flashcards por IA (Anthropic Claude, Google Gemini e modo demo).
-  via padrão **Strategy** — **Anthropic Claude** e **Google Gemini** — além de um **modo
-  demo** embutido (flashcards de exemplo) usado como *fallback*.
-- **Para que é usado:** transformar um texto em flashcards. O `FlashcardService` monta os
-  prompts (system + user) e delega ao `IAService`, que chama o provedor configurado e
-  devolve o JSON; o serviço faz o parse robusto e persiste o deck.
+### 1. IA (LangChain4j — os três módulos)
+- **Qual serviço:** provedores de LLM acessados pelo **LangChain4j** — **Anthropic Claude**,
+  **Google Gemini** ou **OpenAI** — além de um **modo demo** embutido, que produz conteúdo
+  de exemplo sem chamada externa.
+- **Para que é usado:** gerar flashcards, corrigir redações e montar planos de estudo. Cada
+  módulo declara uma interface `@AiService` com os prompts em `@SystemMessage`/`@UserMessage`;
+  o LangChain4j entrega a resposta já mapeada para um `record` Java, sem parse manual de JSON.
 - **Classes participantes:**
-  - `src/main/java/br/ufpb/dsc/studyai/service/IAService.java` (interface — contrato do provedor)
-  - `src/main/java/br/ufpb/dsc/studyai/service/IAServiceImpl.java` (demo / Anthropic / Gemini)
-  - `src/main/java/br/ufpb/dsc/studyai/config/IAProperties.java` (configuração e modo)
-  - `src/main/java/br/ufpb/dsc/studyai/config/IAClientConfig.java` (bean `RestClient` com timeout)
-  - `src/main/java/br/ufpb/dsc/studyai/service/FlashcardService.java` (orquestra a chamada e o parse)
+  - `service/FlashcardAiService.java`, `service/CorretorAiService.java`,
+    `service/RoadmapAiService.java` (interfaces declarativas `@AiService`)
+  - `service/FlashcardService.java`, `service/CorretorService.java`,
+    `service/RoadmapService.java` (regra de negócio, modo demo e validação da resposta)
+  - `config/LangChain4jConfig.java` (escolhe o provedor e monta o `ChatLanguageModel`)
+  - `config/IAProperties.java` (configuração e modo demo/real)
 - **Como é configurado** (variáveis de ambiente — **sem valores reais no repositório**):
 
   | Variável | Função |
@@ -366,7 +390,7 @@ mvn versions:display-dependency-updates -Pversions   # dependências desatualiza
 ```
 Boas práticas já aplicadas: CSRF ativo (inclusive nos POSTs HTMX, via header + meta tag),
 nenhum segredo versionado, senhas com BCrypt, chave de IA somente em variável de ambiente.
-Detalhes em [`docs/SECURITY.md`](docs/SECURITY.md).
+Detalhes em [`wiki/07_SECURITY.md`](wiki/07_SECURITY.md).
 
 ---
 
@@ -406,7 +430,7 @@ A aplicação publicada responde em `127.0.0.1:8111` no servidor (atrás do prox
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`.
 - Migrations Flyway versionadas — nunca editar as já aplicadas.
 
-Detalhes em [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md).
+Detalhes em [`wiki/08_CONVENTIONS.md`](wiki/08_CONVENTIONS.md).
 
 ---
 

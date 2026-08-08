@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!--
+  Fragmentos devolvidos pelo POST /roadmap/gerar (via HTMX).
+  - roadmap : cronograma completo, com as semanas em acordeão
+  - erro    : mensagem amigável quando a geração falha ou o questionário é inválido
+-->
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ============================ CRONOGRAMA ============================ -->
+<div th:fragment="roadmap" class="result-section">
+    <div class="card">
+        <div class="roadmap-header">
+            <div>
+                <div class="card-title" style="margin-bottom:4px" th:text="${roadmap.titulo}">Plano de estudos</div>
+                <div class="roadmap-periodo"
+                     th:text="${#temporals.format(roadmap.dataInicio, 'dd/MM/yyyy')} + ' até ' + ${#temporals.format(roadmap.dataFim, 'dd/MM/yyyy')}">
+                    01/01/2026 até 08/11/2026
+                </div>
+            </div>
+            <div class="roadmap-stats">
+                <div class="roadmap-stat">
+                    <div class="roadmap-stat-value" th:text="${roadmap.semanas.size()}">0</div>
+                    <div class="roadmap-stat-label">semanas</div>
+                </div>
+                <div class="roadmap-stat">
+                    <div class="roadmap-stat-value" th:text="${roadmap.totalTarefas}">0</div>
+                    <div class="roadmap-stat-label">tarefas</div>
+                </div>
+                <div class="roadmap-stat">
+                    <div class="roadmap-stat-value" th:text="${roadmap.horasPorDia} + 'h'">0h</div>
+                    <div class="roadmap-stat-label">por dia</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="roadmap-resumo" th:if="${roadmap.resumoEstrategia != null}"
+             th:text="${roadmap.resumoEstrategia}">
+            Resumo da estratégia montada pela IA.
+        </div>
+
+        <!-- Semanas em acordeão: a primeira já vem aberta (ver studyai.js) -->
+        <div class="semana" th:each="semana, iter : ${roadmap.semanas}"
+             th:classappend="${iter.first} ? 'aberta'">
+            <div class="semana-head" onclick="toggleSemana(this)">
+                <div class="semana-num" th:text="'S' + ${semana.numero}">S1</div>
+                <div class="semana-info">
+                    <div class="semana-foco" th:text="${semana.foco}">Foco da semana</div>
+                    <div class="semana-datas"
+                         th:text="${#temporals.format(semana.dataInicio, 'dd/MM')} + ' – ' + ${#temporals.format(semana.dataFim, 'dd/MM')}">
+                        01/01 – 07/01
+                    </div>
+                </div>
+                <div class="semana-carga" th:text="${semana.totalMinutos / 60} + 'h'">0h</div>
+                <svg class="semana-seta" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </div>
+
+            <div class="semana-corpo">
+                <div class="tarefa" th:each="tarefa : ${semana.tarefas}">
+                    <div class="tarefa-data">
+                        <div class="tarefa-dia" th:text="${#temporals.format(tarefa.data, 'dd/MM')}">01/01</div>
+                        <div class="tarefa-semana" th:text="${#temporals.format(tarefa.data, 'EEE')}">seg</div>
+                    </div>
+                    <div class="tarefa-info">
+                        <div class="tarefa-assunto" th:text="${tarefa.assunto}">Assunto</div>
+                        <div class="tarefa-desc" th:if="${tarefa.descricao != null}"
+                             th:text="${tarefa.descricao}">Descrição da tarefa</div>
+                    </div>
+                    <div class="tarefa-duracao" th:text="${tarefa.duracaoFormatada}">1h30</div>
+                </div>
+
+                <div class="tarefa-vazia" th:if="${#lists.isEmpty(semana.tarefas)}">
+                    Sem tarefas planejadas para esta semana.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================ ERRO ============================ -->
+<div th:fragment="erro" class="result-section">
+    <div class="card">
+        <div class="error-box">
+            <div class="error-icon">⚠️</div>
+            <div class="error-title">Não foi possível montar o plano</div>
+            <div class="error-text" th:text="${mensagem}">Mensagem de erro</div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

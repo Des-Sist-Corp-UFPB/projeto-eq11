@@ -80,3 +80,14 @@ function fcPrev() {
   window.__idx = (window.__idx - 1 + cards.length) % cards.length;
   fcRender();
 }
+
+// =============================================================================
+//  ROADMAP DE ESTUDOS (client-side)
+//  As semanas vêm renderizadas pelo servidor; aqui só abrimos/fechamos o bloco.
+// =============================================================================
+
+// Recebe o cabeçalho clicado e alterna a semana correspondente.
+function toggleSemana(el) {
+  var semana = el.closest('.semana');
+  if (semana) semana.classList.toggle('aberta');
+}

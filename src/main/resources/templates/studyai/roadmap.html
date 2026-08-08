@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!--
+  Página do módulo RoadmapIA.
+  O questionário de perfil usa HTMX: ao enviar, o POST /roadmap/gerar devolve um
+  fragmento com o cronograma, que substitui #roadmap-resultado. Sem recarregar a página.
+-->
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{studyai/layout :: layout(~{::main})}">
+<body>
+<main class="main">
+
+    <div class="page-header">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <h1 class="page-title">RoadmapIA</h1>
+            <span class="badge badge-purple">Módulo 3</span>
+        </div>
+        <div class="page-desc">Responda o questionário abaixo e a IA monta um plano de estudos
+            semana a semana, do primeiro dia até a data da sua prova.</div>
+    </div>
+
+    <!-- ===== QUESTIONÁRIO ===== -->
+    <div class="card" style="margin-bottom:24px">
+        <div class="card-title">Questionário de perfil</div>
+
+        <!--
+          hx-post   → endpoint que gera o plano
+          hx-target → onde o fragmento de resposta é inserido
+          hx-swap   → substitui o conteúdo interno do alvo
+          hx-indicator → mostra o spinner enquanto a IA processa
+          hx-disabled-elt → desabilita o botão durante a requisição
+        -->
+        <form hx-post="/roadmap/gerar"
+              hx-target="#roadmap-resultado"
+              hx-swap="innerHTML"
+              hx-indicator="#roadmap-loading"
+              hx-disabled-elt="#btn-roadmap">
+
+            <div class="quiz-item">
+                <div class="quiz-num">1</div>
+                <div class="quiz-body">
+                    <label>Qual o período do seu plano de estudos?</label>
+                    <div class="form-row">
+                        <div class="form-group" style="margin-bottom:0">
+                            <label for="dataInicio">Começo dos estudos</label>
+                            <input type="date" id="dataInicio" name="dataInicio" required="required"/>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0">
+                            <label for="dataFim">Data da prova</label>
+                            <input type="date" id="dataFim" name="dataFim" required="required"/>
+                        </div>
+                    </div>
+                    <div class="quiz-hint">Máximo de 26 semanas (cerca de 6 meses) por plano.</div>
+                </div>
+            </div>
+
+            <div class="quiz-item">
+                <div class="quiz-num">2</div>
+                <div class="quiz-body">
+                    <label for="horasPorDia">Quantas horas por dia você consegue estudar?</label>
+                    <select id="horasPorDia" name="horasPorDia">
+                        <option value="1">1 hora por dia</option>
+                        <option value="2" selected="selected">2 horas por dia</option>
+                        <option value="3">3 horas por dia</option>
+                        <option value="4">4 horas por dia</option>
+                        <option value="6">6 horas por dia</option>
+                        <option value="8">8 horas por dia</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="quiz-item">
+                <div class="quiz-num">3</div>
+                <div class="quiz-body">
+                    <label for="cursoAlvo">Qual curso você pretende cursar?</label>
+                    <input type="text" id="cursoAlvo" name="cursoAlvo"
+                           placeholder="Ex.: Medicina, Engenharia de Software, Direito..."/>
+                    <div class="quiz-hint">A IA usa o curso para dar mais peso às áreas que mais valem na sua nota.</div>
+                </div>
+            </div>
+
+            <div class="quiz-item">
+                <div class="quiz-num">4</div>
+                <div class="quiz-body">
+                    <label>Em quais áreas você tem mais dificuldade?</label>
+                    <div class="check-grid">
+                        <label class="check-item">
+                            <input type="checkbox" name="dificuldades" value="Linguagens e Códigos"/>
+                            Linguagens e Códigos
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="dificuldades" value="Matemática"/>
+                            Matemática
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="dificuldades" value="Ciências da Natureza"/>
+                            Ciências da Natureza
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="dificuldades" value="Ciências Humanas"/>
+                            Ciências Humanas
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" name="dificuldades" value="Redação"/>
+                            Redação
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-item">
+                <div class="quiz-num">5</div>
+                <div class="quiz-body">
+                    <label for="experiencia">Você já fez o ENEM antes?</label>
+                    <select id="experiencia" name="experiencia">
+                        <option value="Nunca fiz o ENEM" selected="selected">Nunca fiz o ENEM</option>
+                        <option value="Já fiz, nota abaixo de 500">Já fiz, nota abaixo de 500</option>
+                        <option value="Já fiz, nota entre 500 e 650">Já fiz, nota entre 500 e 650</option>
+                        <option value="Já fiz, nota entre 650 e 750">Já fiz, nota entre 650 e 750</option>
+                        <option value="Já fiz, nota acima de 750">Já fiz, nota acima de 750</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="quiz-item">
+                <div class="quiz-num">6</div>
+                <div class="quiz-body">
+                    <label for="observacoes">Mais alguma coisa que devemos considerar? (opcional)</label>
+                    <textarea id="observacoes" name="observacoes" rows="3"
+                              placeholder="Ex.: trabalho de manhã, só estudo à noite; já terminei o conteúdo de Biologia; tenho dificuldade com interpretação de texto..."></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="btn-roadmap"
+                    style="width:100%;justify-content:center">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+                Montar meu plano de estudos
+            </button>
+        </form>
+    </div>
+
+    <!-- ===== RESULTADO ===== -->
+    <!-- Indicador de carregamento HTMX (sibling do alvo, não é substituído) -->
+    <div id="roadmap-loading" class="card htmx-indicator">
+        <div class="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">IA montando seu cronograma...</div>
+        </div>
+    </div>
+    <div id="roadmap-resultado">
+        <!-- Plano reaberto (GET /roadmap/{id}): renderiza o cronograma já preenchido -->
+        <th:block th:if="${roadmap != null}">
+            <div th:replace="~{studyai/fragments/roadmap-result :: roadmap}"></div>
+        </th:block>
+        <!-- Placeholder inicial (quando não há plano carregado) -->
+        <th:block th:if="${roadmap == null}">
+            <div class="card placeholder-card">
+                <div class="placeholder-emoji">🗺️</div>
+                <div class="placeholder-text">Seu cronograma de estudos aparecerá aqui</div>
+            </div>
+        </th:block>
+    </div>
+
+</main>
+</body>
+</html>

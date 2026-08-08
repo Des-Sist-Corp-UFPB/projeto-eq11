@@ -29,10 +29,13 @@ spring:
 studyai:
   ia:
     modo: ${STUDYAI_AI_MODO:demo}            # demo | real
-    provedor: ${STUDYAI_AI_PROVEDOR:anthropic}  # anthropic | gemini
-    api-key: ${STUDYAI_AI_API_KEY:}          # vazio = força modo demo
-    modelo: ${STUDYAI_AI_MODELO:claude-sonnet-4-20250514}
-    timeout-segundos: 45
+    provedor: ${STUDYAI_AI_PROVEDOR:openai}  # openai | anthropic | gemini
+    api-key: ${STUDYAI_AI_API_KEY:}          # vazio = força modo demo (mesmo com modo=real)
+    # O modelo precisa pertencer ao provedor acima. Trocar de provedor sem trocar
+    # o modelo é o erro mais comum (o provedor responde "modelo inexistente").
+    modelo: ${STUDYAI_AI_MODELO:gpt-4o-mini}
+    # Chamadas de LLM levam de 5 a 60s; o RoadmapIA pede um plano inteiro de uma vez.
+    timeout-segundos: ${STUDYAI_AI_TIMEOUT:120}
 
 # Actuator - monitoramento da aplicação
 # Acesse: http://localhost:8080/actuator/health

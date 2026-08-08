@@ -77,12 +77,18 @@ services:
       DB_NAME: ${DB_NAME:-eq11}
       DB_USER: ${DB_USER:-eq11}
       DB_PASSWORD: ${DB_PASSWORD:-eq11}
-      # IA em modo demo por padrão (FlashIA funciona sem chave). Para IA real,
-      # defina STUDYAI_AI_MODO=real e as demais variáveis no .env.
+      # IA em modo demo por padrão (os módulos funcionam sem chave). Para IA real,
+      # defina STUDYAI_AI_MODO=real e STUDYAI_AI_API_KEY no .env.
+      # ATENÇÃO: o modelo precisa ser do MESMO provedor configurado — mandar um
+      # modelo da Anthropic para a OpenAI (ou vice-versa) devolve erro de modelo inexistente.
       STUDYAI_AI_MODO: ${STUDYAI_AI_MODO:-demo}
-      STUDYAI_AI_PROVEDOR: ${STUDYAI_AI_PROVEDOR:-anthropic}
+      STUDYAI_AI_PROVEDOR: ${STUDYAI_AI_PROVEDOR:-openai}
       STUDYAI_AI_API_KEY: ${STUDYAI_AI_API_KEY:-}
-      STUDYAI_AI_MODELO: ${STUDYAI_AI_MODELO:-claude-sonnet-4-20250514}
+      STUDYAI_AI_MODELO: ${STUDYAI_AI_MODELO:-gpt-4o-mini}
+      # Chamadas de LLM são lentas; o RoadmapIA pode gerar dezenas de tarefas de uma vez.
+      STUDYAI_AI_TIMEOUT: ${STUDYAI_AI_TIMEOUT:-120}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     ports:
       # Porta exigida pelo professor — vinculada apenas ao localhost do servidor
       - "127.0.0.1:8111:8080"

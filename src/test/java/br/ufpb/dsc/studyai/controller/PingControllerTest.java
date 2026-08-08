@@ -39,6 +39,11 @@ class PingControllerTest {
     @MockBean
     private br.ufpb.dsc.studyai.service.UsuarioService usuarioService;
 
+    // O SecurityConfig também injeta o CustomOAuth2UserService na configuração do
+    // oauth2Login; no slice web ele não é escaneado, então vai um mock aqui também.
+    @MockBean
+    private br.ufpb.dsc.studyai.service.CustomOAuth2UserService customOAuth2UserService;
+
     @Test
     void ping_deveResponder200JsonPublicamente_semLogin() throws Exception {
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.eq(Integer.class))).thenReturn(1);
