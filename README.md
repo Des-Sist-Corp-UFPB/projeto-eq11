@@ -7,6 +7,9 @@ Artificial rodando de forma **segura no backend**, dentro de um sistema corporat
 > **Disciplina:** Desenvolvimento de Sistemas Corporativos (DSC)
 > **Professor:** Rodrigo Rebouças · **Instituição:** UFPB — Campus IV · **Equipe:** eq11
 
+> 🎥 **Vídeo de apresentação (avaliação):** <https://youtu.be/kNmebS0tUa4>
+> Demonstração completa do sistema — todas as telas, integrações, auditoria e observabilidade.
+
 ---
 
 ## 📑 Sumário
