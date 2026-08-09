@@ -120,6 +120,16 @@
             <version>${webjars-htmx.version}</version>
         </dependency>
 
+        <!-- === OBSERVABILIDADE: anotações do OpenTelemetry === -->
+        <!-- Fornece @WithSpan/@SpanAttribute para instrumentação manual. O agente Java
+             (anexado no Dockerfile) processa essas anotações em runtime; sem o agente,
+             elas são inertes e não afetam a execução. -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <version>2.11.0</version>
+        </dependency>
+
         <!-- === IA: LangChain4j === -->
         <dependency>
             <groupId>dev.langchain4j</groupId>

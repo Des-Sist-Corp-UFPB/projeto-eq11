@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.web.SecurityFilterChain;
 import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
 
@@ -43,36 +43,14 @@ import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
 <span class="fc" id="L43">public class SecurityConfig {</span>
 
     /**
-     * Define o serviço de usuários em memória.
-     *
-     * &lt;p&gt;&lt;strong&gt;ATENÇÃO — APENAS PARA DESENVOLVIMENTO E DEMONSTRAÇÃO.&lt;/strong&gt;&lt;br&gt;
-     * Em produção, substitua por um {@code UserDetailsService} que busca usuários do banco
-     * de dados (ex.: via Spring Data JPA) e utilize senhas armazenadas com BCrypt.
-     *
-     * &lt;p&gt;{@code User.builder()} é um fluent builder do Spring Security para criar usuários.
-     * O password DEVE ser codificado — nunca passe a senha em texto puro.
-     *
-     * @param encoder codificador de senhas (injetado automaticamente pelo Spring)
-     * @return gerenciador de usuários em memória
+     * Provedor de autenticação que utiliza o UsuarioService (banco de dados) e BCrypt.
      */
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-<span class="fc" id="L60">        UserDetails admin = User.builder()</span>
-<span class="fc" id="L61">                .username(&quot;admin&quot;)</span>
-                // encode() aplica BCrypt na senha — o hash muda a cada chamada mas a verificação funciona
-<span class="fc" id="L63">                .password(encoder.encode(&quot;admin123&quot;))</span>
-                // ROLE_ADMIN é adicionado automaticamente; &quot;roles&quot; é um atalho para &quot;authorities&quot;
-<span class="fc" id="L65">                .roles(&quot;ADMIN&quot;)</span>
-<span class="fc" id="L66">                .build();</span>
-
-        // Usuário de demonstração (fase demo — em memória, ainda sem cadastro em banco)
-<span class="fc" id="L69">        UserDetails jeanmatheus = User.builder()</span>
-<span class="fc" id="L70">                .username(&quot;jeanmatheus&quot;)</span>
-<span class="fc" id="L71">                .password(encoder.encode(&quot;teste10&quot;))</span>
-<span class="fc" id="L72">                .roles(&quot;USER&quot;)</span>
-<span class="fc" id="L73">                .build();</span>
-
-<span class="fc" id="L75">        return new InMemoryUserDetailsManager(admin, jeanmatheus);</span>
+    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder encoder) {
+<span class="fc" id="L50">        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();</span>
+<span class="fc" id="L51">        authProvider.setUserDetailsService(userDetailsService);</span>
+<span class="fc" id="L52">        authProvider.setPasswordEncoder(encoder);</span>
+<span class="fc" id="L53">        return authProvider;</span>
     }
 
     /**
@@ -90,7 +68,7 @@ import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-<span class="fc" id="L93">        return new BCryptPasswordEncoder();</span>
+<span class="fc" id="L71">        return new BCryptPasswordEncoder();</span>
     }
 
     /**
@@ -111,39 +89,48 @@ import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
      * @throws Exception se ocorrer erro na configuração
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuditLogoutHandler auditLogoutHandler) throws Exception {
-<span class="fc" id="L115">        http</span>
+    public SecurityFilterChain filterChain(HttpSecurity http, AuditLogoutHandler auditLogoutHandler, br.ufpb.dsc.studyai.service.CustomOAuth2UserService customOAuth2UserService) throws Exception {
+<span class="fc" id="L93">        http</span>
                 // === AUTORIZAÇÃO DE REQUISIÇÕES ===
-<span class="fc" id="L117">                .authorizeHttpRequests(auth -&gt; auth</span>
+<span class="fc" id="L95">                .authorizeHttpRequests(auth -&gt; auth</span>
                         // Recursos estáticos e health checks são públicos
                         // /webjars/** → Bootstrap, HTMX (servidos pelo Spring como recursos estáticos)
                         // /css/**, /js/** → arquivos estáticos personalizados
                         // /actuator/health → monitoramento sem autenticação
                         // /ping → health check público da equipe (painel de Status)
-<span class="fc" id="L123">                        .requestMatchers(&quot;/ping&quot;, &quot;/webjars/**&quot;, &quot;/css/**&quot;, &quot;/js/**&quot;, &quot;/actuator/health&quot;).permitAll()</span>
+<span class="fc" id="L101">                        .requestMatchers(&quot;/ping&quot;, &quot;/webjars/**&quot;, &quot;/css/**&quot;, &quot;/js/**&quot;, &quot;/actuator/health&quot;, &quot;/cadastro&quot;, &quot;/cadastro/salvar&quot;, &quot;/login&quot;).permitAll()</span>
                         // Qualquer outra requisição exige autenticação
-<span class="fc" id="L125">                        .anyRequest().authenticated()</span>
+<span class="fc" id="L103">                        .anyRequest().authenticated()</span>
                 )
 
                 // === FORMULÁRIO DE LOGIN ===
-<span class="fc" id="L129">                .formLogin(form -&gt; form</span>
+<span class="fc" id="L107">                .formLogin(form -&gt; form</span>
                         // URL da página de login customizada (em vez da padrão do Spring Security)
-<span class="fc" id="L131">                        .loginPage(&quot;/login&quot;)</span>
+<span class="fc" id="L109">                        .loginPage(&quot;/login&quot;)</span>
                         // Após login bem-sucedido, redireciona para a home do StudyAI (&quot;/&quot;)
                         // O segundo parâmetro (true) força sempre ir para esta URL,
                         // ignorando a URL que o usuário tentou acessar antes do login
-<span class="fc" id="L135">                        .defaultSuccessUrl(&quot;/&quot;, true)</span>
+<span class="fc" id="L113">                        .defaultSuccessUrl(&quot;/&quot;, true)</span>
                         // A página de login deve ser acessível sem autenticação
-<span class="fc" id="L137">                        .permitAll()</span>
+<span class="fc" id="L115">                        .permitAll()</span>
+                )
+
+                // === OAUTH2 (GOOGLE) ===
+<span class="fc" id="L119">                .oauth2Login(oauth2 -&gt; oauth2</span>
+<span class="fc" id="L120">                        .loginPage(&quot;/login&quot;)</span>
+<span class="fc" id="L121">                        .defaultSuccessUrl(&quot;/&quot;, true)</span>
+<span class="fc" id="L122">                        .userInfoEndpoint(userInfo -&gt; userInfo</span>
+<span class="fc" id="L123">                                .userService(customOAuth2UserService)</span>
+                        )
                 )
 
                 // === LOGOUT ===
-<span class="fc" id="L141">                .logout(logout -&gt; logout</span>
+<span class="fc" id="L128">                .logout(logout -&gt; logout</span>
                         // Após logout, redireciona para a página de login com mensagem
-<span class="fc" id="L143">                        .logoutSuccessUrl(&quot;/login?logout&quot;)</span>
+<span class="fc" id="L130">                        .logoutSuccessUrl(&quot;/login?logout&quot;)</span>
                         // Handler ADITIVO: registra o logout na auditoria sem alterar o redirect acima
-<span class="fc" id="L145">                        .addLogoutHandler(auditLogoutHandler)</span>
-<span class="fc" id="L146">                        .permitAll()</span>
+<span class="fc" id="L132">                        .addLogoutHandler(auditLogoutHandler)</span>
+<span class="fc" id="L133">                        .permitAll()</span>
                 )
 
                 // === CSRF (Cross-Site Request Forgery) ===
@@ -154,10 +141,10 @@ import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
                 // o token é exposto em meta tags no layout e o studyai.js o envia no header
                 // a cada requisição HTMX (evento htmx:configRequest). Por isso não há nenhum
                 // endpoint isento aqui — a proteção vale para toda a aplicação.
-<span class="fc" id="L157">                .csrf(csrf -&gt; {</span>
-<span class="fc" id="L158">                });</span>
+<span class="fc" id="L144">                .csrf(csrf -&gt; {</span>
+<span class="fc" id="L145">                });</span>
 
-<span class="fc" id="L160">        return http.build();</span>
+<span class="fc" id="L147">        return http.build();</span>
     }
 
     /**
@@ -173,7 +160,7 @@ import br.ufpb.dsc.studyai.audit.AuditLogoutHandler;
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-<span class="fc" id="L176">        return config.getAuthenticationManager();</span>
+<span class="fc" id="L163">        return config.getAuthenticationManager();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

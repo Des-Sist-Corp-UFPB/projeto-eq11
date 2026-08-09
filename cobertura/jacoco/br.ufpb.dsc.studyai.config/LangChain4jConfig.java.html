@@ -33,13 +33,19 @@ import java.time.Duration;
 <span class="nc" id="L33">                    .modelName(props.getModelo())</span>
 <span class="nc" id="L34">                    .timeout(Duration.ofSeconds(props.getTimeoutSegundos()))</span>
 <span class="nc" id="L35">                    .build();</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        } else if (&quot;openai&quot;.equals(provedor)) {</span>
+<span class="nc" id="L37">            return dev.langchain4j.model.openai.OpenAiChatModel.builder()</span>
+<span class="nc" id="L38">                    .apiKey(props.getApiKey())</span>
+<span class="nc bnc" id="L39" title="All 4 branches missed.">                    .modelName(props.getModelo() != null &amp;&amp; !props.getModelo().isEmpty() ? props.getModelo() : &quot;gpt-4o-mini&quot;)</span>
+<span class="nc" id="L40">                    .timeout(Duration.ofSeconds(props.getTimeoutSegundos()))</span>
+<span class="nc" id="L41">                    .build();</span>
         } else {
             // Fallback para Anthropic, que é o padrão
-<span class="nc" id="L38">            return AnthropicChatModel.builder()</span>
-<span class="nc" id="L39">                    .apiKey(props.getApiKey())</span>
-<span class="nc" id="L40">                    .modelName(props.getModelo())</span>
-<span class="nc" id="L41">                    .timeout(Duration.ofSeconds(props.getTimeoutSegundos()))</span>
-<span class="nc" id="L42">                    .build();</span>
+<span class="nc" id="L44">            return AnthropicChatModel.builder()</span>
+<span class="nc" id="L45">                    .apiKey(props.getApiKey())</span>
+<span class="nc" id="L46">                    .modelName(props.getModelo())</span>
+<span class="nc" id="L47">                    .timeout(Duration.ofSeconds(props.getTimeoutSegundos()))</span>
+<span class="nc" id="L48">                    .build();</span>
         }
     }
 }

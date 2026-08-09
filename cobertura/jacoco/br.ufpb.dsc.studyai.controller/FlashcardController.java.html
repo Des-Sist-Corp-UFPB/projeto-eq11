@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -43,11 +44,11 @@ public class FlashcardController {
 
     public FlashcardController(FlashcardService flashcardService,
                               ObjectMapper objectMapper,
-<span class="fc" id="L46">                              AuditLogService auditLogService) {</span>
-<span class="fc" id="L47">        this.flashcardService = flashcardService;</span>
-<span class="fc" id="L48">        this.objectMapper = objectMapper;</span>
-<span class="fc" id="L49">        this.auditLogService = auditLogService;</span>
-<span class="fc" id="L50">    }</span>
+<span class="fc" id="L47">                              AuditLogService auditLogService) {</span>
+<span class="fc" id="L48">        this.flashcardService = flashcardService;</span>
+<span class="fc" id="L49">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L50">        this.auditLogService = auditLogService;</span>
+<span class="fc" id="L51">    }</span>
 
     /**
      * Exibe a página do FlashIA.
@@ -57,8 +58,8 @@ public class FlashcardController {
      */
     @GetMapping
     public String pagina(Model model) {
-<span class="fc" id="L60">        model.addAttribute(&quot;titulo&quot;, &quot;FlashIA&quot;);</span>
-<span class="fc" id="L61">        return &quot;studyai/flashcards&quot;;</span>
+<span class="fc" id="L61">        model.addAttribute(&quot;titulo&quot;, &quot;FlashIA&quot;);</span>
+<span class="fc" id="L62">        return &quot;studyai/flashcards&quot;;</span>
     }
 
     /**
@@ -72,25 +73,25 @@ public class FlashcardController {
      * @return página do FlashIA com o deck carregado (ou o placeholder, se não existir)
      */
     @GetMapping(&quot;/{id}&quot;)
-    public String abrirDeck(@PathVariable Long id, Model model) {
-<span class="fc" id="L76">        model.addAttribute(&quot;titulo&quot;, &quot;FlashIA&quot;);</span>
-<span class="fc" id="L77">        var deckOpt = flashcardService.buscarDeck(id);</span>
-<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (deckOpt.isPresent()) {</span>
-<span class="fc" id="L79">            Deck deck = deckOpt.get();</span>
-<span class="fc" id="L80">            List&lt;FlashcardDTO&gt; cartoes = deck.getFlashcards().stream()</span>
-<span class="fc" id="L81">                    .map(f -&gt; new FlashcardDTO(f.getFrente(), f.getVerso()))</span>
-<span class="fc" id="L82">                    .toList();</span>
-<span class="fc" id="L83">            model.addAttribute(&quot;deck&quot;, deck);</span>
-<span class="fc" id="L84">            model.addAttribute(&quot;cartoes&quot;, cartoes);</span>
+    public String abrirDeck(@PathVariable Long id, Model model, Principal principal) {
+<span class="fc" id="L77">        model.addAttribute(&quot;titulo&quot;, &quot;FlashIA&quot;);</span>
+<span class="fc" id="L78">        var deckOpt = flashcardService.buscarDeck(id, principal.getName());</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (deckOpt.isPresent()) {</span>
+<span class="fc" id="L80">            Deck deck = deckOpt.get();</span>
+<span class="fc" id="L81">            List&lt;FlashcardDTO&gt; cartoes = deck.getFlashcards().stream()</span>
+<span class="fc" id="L82">                    .map(f -&gt; new FlashcardDTO(f.getFrente(), f.getVerso()))</span>
+<span class="fc" id="L83">                    .toList();</span>
+<span class="fc" id="L84">            model.addAttribute(&quot;deck&quot;, deck);</span>
+<span class="fc" id="L85">            model.addAttribute(&quot;cartoes&quot;, cartoes);</span>
             try {
-<span class="fc" id="L86">                model.addAttribute(&quot;cartoesJson&quot;, objectMapper.writeValueAsString(cartoes));</span>
-<span class="fc" id="L87">            } catch (JsonProcessingException e) {</span>
+<span class="fc" id="L87">                model.addAttribute(&quot;cartoesJson&quot;, objectMapper.writeValueAsString(cartoes));</span>
+<span class="fc" id="L88">            } catch (JsonProcessingException e) {</span>
                 // Sem JSON dos cartões, a página cai no placeholder em vez de quebrar
-<span class="fc" id="L89">                model.addAttribute(&quot;deck&quot;, null);</span>
-<span class="fc" id="L90">            }</span>
+<span class="fc" id="L90">                model.addAttribute(&quot;deck&quot;, null);</span>
+<span class="fc" id="L91">            }</span>
         }
         // Se o deck não existir, &quot;deck&quot; fica ausente e a página exibe o placeholder padrão
-<span class="fc" id="L93">        return &quot;studyai/flashcards&quot;;</span>
+<span class="fc" id="L94">        return &quot;studyai/flashcards&quot;;</span>
     }
 
     /**
@@ -104,29 +105,29 @@ public class FlashcardController {
      * @return fragmento com os cartões, ou fragmento de erro amigável
      */
     @PostMapping(&quot;/gerar&quot;)
-    public String gerar(@ModelAttribute FlashcardRequest request, Model model) {
+    public String gerar(@ModelAttribute FlashcardRequest request, Model model, Principal principal) {
         try {
-<span class="fc" id="L109">            Deck deck = flashcardService.gerar(request);</span>
-<span class="fc" id="L110">            List&lt;FlashcardDTO&gt; cartoes = deck.getFlashcards().stream()</span>
-<span class="fc" id="L111">                    .map(f -&gt; new FlashcardDTO(f.getFrente(), f.getVerso()))</span>
-<span class="fc" id="L112">                    .toList();</span>
+<span class="fc" id="L110">            Deck deck = flashcardService.gerar(request, principal.getName());</span>
+<span class="fc" id="L111">            List&lt;FlashcardDTO&gt; cartoes = deck.getFlashcards().stream()</span>
+<span class="fc" id="L112">                    .map(f -&gt; new FlashcardDTO(f.getFrente(), f.getVerso()))</span>
+<span class="fc" id="L113">                    .toList();</span>
 
             // Auditoria: registra a geração de flashcards (usuário e IP resolvidos no service)
-<span class="fc" id="L115">            auditLogService.registrar(</span>
-<span class="fc" id="L116">                    &quot;GERAR_FLASHCARD&quot;, &quot;deck&quot;, deck.getId(),</span>
-<span class="fc" id="L117">                    cartoes.size() + &quot; cartões; banca=&quot; + deck.getBanca());</span>
+<span class="fc" id="L116">            auditLogService.registrar(</span>
+<span class="fc" id="L117">                    &quot;GERAR_FLASHCARD&quot;, &quot;deck&quot;, deck.getId(),</span>
+<span class="fc" id="L118">                    cartoes.size() + &quot; cartões; banca=&quot; + deck.getBanca());</span>
 
-<span class="fc" id="L119">            model.addAttribute(&quot;deck&quot;, deck);</span>
-<span class="fc" id="L120">            model.addAttribute(&quot;cartoes&quot;, cartoes);</span>
+<span class="fc" id="L120">            model.addAttribute(&quot;deck&quot;, deck);</span>
+<span class="fc" id="L121">            model.addAttribute(&quot;cartoes&quot;, cartoes);</span>
             // JSON serializado no servidor para o JS client-side do carrossel consumir com segurança
-<span class="fc" id="L122">            model.addAttribute(&quot;cartoesJson&quot;, objectMapper.writeValueAsString(cartoes));</span>
-<span class="fc" id="L123">            return &quot;studyai/fragments/flashcard-result :: cards&quot;;</span>
-<span class="fc" id="L124">        } catch (IAIndisponivelException e) {</span>
-<span class="fc" id="L125">            model.addAttribute(&quot;mensagem&quot;, e.getMessage());</span>
-<span class="fc" id="L126">            return &quot;studyai/fragments/flashcard-result :: erro&quot;;</span>
-<span class="fc" id="L127">        } catch (JsonProcessingException e) {</span>
-<span class="fc" id="L128">            model.addAttribute(&quot;mensagem&quot;, &quot;Erro ao preparar os cartões para exibição.&quot;);</span>
-<span class="fc" id="L129">            return &quot;studyai/fragments/flashcard-result :: erro&quot;;</span>
+<span class="fc" id="L123">            model.addAttribute(&quot;cartoesJson&quot;, objectMapper.writeValueAsString(cartoes));</span>
+<span class="fc" id="L124">            return &quot;studyai/fragments/flashcard-result :: cards&quot;;</span>
+<span class="fc" id="L125">        } catch (IAIndisponivelException e) {</span>
+<span class="fc" id="L126">            model.addAttribute(&quot;mensagem&quot;, e.getMessage());</span>
+<span class="fc" id="L127">            return &quot;studyai/fragments/flashcard-result :: erro&quot;;</span>
+<span class="fc" id="L128">        } catch (JsonProcessingException e) {</span>
+<span class="fc" id="L129">            model.addAttribute(&quot;mensagem&quot;, &quot;Erro ao preparar os cartões para exibição.&quot;);</span>
+<span class="fc" id="L130">            return &quot;studyai/fragments/flashcard-result :: erro&quot;;</span>
         }
     }
 }

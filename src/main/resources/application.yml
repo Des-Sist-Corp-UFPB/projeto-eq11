@@ -37,6 +37,19 @@ studyai:
     # Chamadas de LLM levam de 5 a 60s; o RoadmapIA pede um plano inteiro de uma vez.
     timeout-segundos: ${STUDYAI_AI_TIMEOUT:120}
 
+  # Analytics de frontend (Umami). Vazio = o script não é injetado nas páginas.
+  # UMAMI_SRC: URL do script.js no servidor do professor (ex.: https://umami.dsc.rodrigor.com/script.js)
+  # UMAMI_WEBSITE_ID: UUID gerado ao cadastrar o site no painel do Umami.
+  umami:
+    src: ${UMAMI_SRC:}
+    website-id: ${UMAMI_WEBSITE_ID:}
+
+# Correlação log <-> trace: o agente do OpenTelemetry injeta trace_id e span_id no MDC.
+# Incluí-los no padrão do console permite pular do log direto para o trace no Grafana.
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [trace_id=%X{trace_id} span_id=%X{span_id}] %logger{36} - %msg%n"
+
 # Actuator - monitoramento da aplicação
 # Acesse: http://localhost:8080/actuator/health
 management:

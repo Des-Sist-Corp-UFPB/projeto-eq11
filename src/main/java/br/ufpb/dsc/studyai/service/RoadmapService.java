@@ -11,6 +11,9 @@ import br.ufpb.dsc.studyai.dto.TarefaPlanejada;
 import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
 import br.ufpb.dsc.studyai.repository.RoadmapRepository;
 import br.ufpb.dsc.studyai.repository.UsuarioRepository;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -103,7 +106,8 @@ public class RoadmapService {
      * @throws IAIndisponivelException   se a chamada à IA falhar
      */
     @Transactional
-    public Roadmap gerar(RoadmapRequest request, String username) {
+    @WithSpan("roadmap.gerar")
+    public Roadmap gerar(RoadmapRequest request, @SpanAttribute("roadmap.usuario") String username) {
         LocalDate inicio = parseData(request.dataInicio(), "data de início");
         LocalDate fim = parseData(request.dataFim(), "data final");
         validarPeriodo(inicio, fim);
@@ -133,6 +137,12 @@ public class RoadmapService {
         roadmap.setExperiencia(experiencia);
         roadmap.setObservacoes(StringUtils.hasText(request.observacoes()) ? request.observacoes().trim() : null);
         usuarioRepository.findByUsername(username).ifPresent(roadmap::setUsuario);
+
+        // Enriquece o trace com dados de negócio: ajuda a diagnosticar planos grandes/lentos.
+        Span.current()
+                .setAttribute("roadmap.modo", props.isDemo() ? "demo" : "real")
+                .setAttribute("roadmap.semanas", roadmap.getSemanas().size())
+                .setAttribute("roadmap.tarefas", roadmap.getTotalTarefas());
 
         return roadmapRepository.save(roadmap);
     }

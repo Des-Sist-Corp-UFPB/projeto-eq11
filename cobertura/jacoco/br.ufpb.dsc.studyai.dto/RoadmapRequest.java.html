@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoadmapRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.dto</a> &gt; <span class="el_source">RoadmapRequest.java</span></div><h1>RoadmapRequest.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.dto;
+
+import java.util.List;
+
+/**
+ * DTO de entrada do módulo &lt;strong&gt;RoadmapIA&lt;/strong&gt; — respostas do questionário de
+ * perfil enviadas pelo formulário.
+ *
+ * &lt;p&gt;As datas chegam como {@code String} no formato {@code yyyy-MM-dd} (o que o
+ * {@code &lt;input type=&quot;date&quot;&gt;} envia). A conversão e a validação acontecem no
+ * {@code RoadmapService}, para que uma data inválida vire uma mensagem amigável no
+ * fragmento de erro em vez de um 400 do Spring.
+ *
+ * @param dataInicio   primeiro dia do plano ({@code yyyy-MM-dd})
+ * @param dataFim      último dia do plano ({@code yyyy-MM-dd}), normalmente a data da prova
+ * @param horasPorDia  horas de estudo disponíveis por dia
+ * @param cursoAlvo    curso pretendido (ex.: &quot;Medicina&quot;), pode ser vazio
+ * @param dificuldades áreas de maior dificuldade marcadas no questionário
+ * @param experiencia  experiência anterior com o ENEM (ex.: &quot;Já fiz, nota entre 500 e 650&quot;)
+ * @param observacoes  informações livres adicionais, pode ser vazio
+ */
+<span class="fc" id="L22">public record RoadmapRequest(</span>
+        String dataInicio,
+        String dataFim,
+        int horasPorDia,
+        String cursoAlvo,
+        List&lt;String&gt; dificuldades,
+        String experiencia,
+        String observacoes
+) {
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

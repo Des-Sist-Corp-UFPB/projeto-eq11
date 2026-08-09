@@ -7,6 +7,9 @@ import br.ufpb.dsc.studyai.dto.FlashcardDTO;
 import br.ufpb.dsc.studyai.dto.FlashcardRequest;
 import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
 import br.ufpb.dsc.studyai.repository.DeckRepository;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -21,68 +24,80 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class FlashcardService {
 
-<span class="fc" id="L24">    private static final DateTimeFormatter DATA_BR =</span>
-<span class="fc" id="L25">            DateTimeFormatter.ofPattern(&quot;dd/MM/yyyy&quot;).withZone(ZoneId.systemDefault());</span>
+<span class="fc" id="L27">    private static final DateTimeFormatter DATA_BR =</span>
+<span class="fc" id="L28">            DateTimeFormatter.ofPattern(&quot;dd/MM/yyyy&quot;).withZone(ZoneId.systemDefault());</span>
 
     private final FlashcardAiService flashcardAiService;
     private final DeckRepository deckRepository;
+    private final br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository;
     private final IAProperties props;
 
-<span class="fc" id="L31">    public FlashcardService(FlashcardAiService flashcardAiService, DeckRepository deckRepository, IAProperties props) {</span>
-<span class="fc" id="L32">        this.flashcardAiService = flashcardAiService;</span>
-<span class="fc" id="L33">        this.deckRepository = deckRepository;</span>
-<span class="fc" id="L34">        this.props = props;</span>
-<span class="fc" id="L35">    }</span>
+<span class="fc" id="L35">    public FlashcardService(FlashcardAiService flashcardAiService, DeckRepository deckRepository, br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository, IAProperties props) {</span>
+<span class="fc" id="L36">        this.flashcardAiService = flashcardAiService;</span>
+<span class="fc" id="L37">        this.deckRepository = deckRepository;</span>
+<span class="fc" id="L38">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L39">        this.props = props;</span>
+<span class="fc" id="L40">    }</span>
 
     @Transactional
-    public Deck gerar(FlashcardRequest request) {
-<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        String banca = StringUtils.hasText(request.banca()) ? request.banca().trim() : &quot;Geral&quot;;</span>
-<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        String disciplina = request.disciplina() == null ? &quot;&quot; : request.disciplina().trim();</span>
-<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        int quantidade = request.quantidade() &lt;= 0 ? 15 : Math.min(request.quantidade(), 30);</span>
+    @WithSpan(&quot;flashcard.gerar&quot;)
+    public Deck gerar(FlashcardRequest request, @SpanAttribute(&quot;flashcard.usuario&quot;) String username) {
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        String banca = StringUtils.hasText(request.banca()) ? request.banca().trim() : &quot;Geral&quot;;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        String disciplina = request.disciplina() == null ? &quot;&quot; : request.disciplina().trim();</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        int quantidade = request.quantidade() &lt;= 0 ? 15 : Math.min(request.quantidade(), 30);</span>
         
-<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        String texto = request.texto() == null ? &quot;&quot; : request.texto();</span>
-<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (texto.length() &gt; 8000) {</span>
-<span class="nc" id="L45">            texto = texto.substring(0, 8000);</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        String texto = request.texto() == null ? &quot;&quot; : request.texto();</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (texto.length() &gt; 8000) {</span>
+<span class="nc" id="L51">            texto = texto.substring(0, 8000);</span>
         }
 
         List&lt;FlashcardDTO&gt; cartoes;
 
-<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (props.isDemo()) {</span>
-<span class="fc" id="L51">            cartoes = getFlashcardsDemo();</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (props.isDemo()) {</span>
+<span class="fc" id="L57">            cartoes = getFlashcardsDemo();</span>
         } else {
             try {
-<span class="fc" id="L54">                cartoes = flashcardAiService.gerarFlashcards(banca, disciplina, quantidade, texto);</span>
-<span class="pc bpc" id="L55" title="1 of 4 branches missed.">                if (cartoes == null || cartoes.isEmpty()) {</span>
-<span class="fc" id="L56">                    throw new IAIndisponivelException(&quot;A IA não gerou nenhum flashcard válido.&quot;);</span>
+<span class="fc" id="L60">                br.ufpb.dsc.studyai.dto.FlashcardResponse response = flashcardAiService.gerarFlashcards(banca, disciplina, quantidade, texto);</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">                cartoes = response != null ? response.cartoes() : null;</span>
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">                if (cartoes == null || cartoes.isEmpty()) {</span>
+<span class="fc" id="L63">                    throw new IAIndisponivelException(&quot;A IA não gerou nenhum flashcard válido.&quot;);</span>
                 }
-<span class="fc" id="L58">            } catch (Exception e) {</span>
-<span class="fc" id="L59">                throw new IAIndisponivelException(&quot;Não foi possível contatar o serviço de IA agora. Tente novamente em instantes.&quot;, e);</span>
-<span class="fc" id="L60">            }</span>
+<span class="fc" id="L65">            } catch (Exception e) {</span>
+<span class="fc" id="L66">                e.printStackTrace();</span>
+<span class="fc" id="L67">                throw new IAIndisponivelException(&quot;Erro na IA: &quot; + e.getMessage(), e);</span>
+<span class="fc" id="L68">            }</span>
         }
 
-<span class="fc" id="L63">        Deck deck = new Deck(montarTitulo(banca, disciplina), banca, disciplina);</span>
-<span class="fc" id="L64">        int ordem = 0;</span>
-<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (FlashcardDTO dto : cartoes) {</span>
-<span class="fc" id="L66">            deck.adicionarFlashcard(new Flashcard(dto.frente(), dto.verso(), ordem++));</span>
-<span class="fc" id="L67">        }</span>
-<span class="fc" id="L68">        return deckRepository.save(deck);</span>
+<span class="fc" id="L71">        Deck deck = new Deck(montarTitulo(banca, disciplina), banca, disciplina);</span>
+<span class="fc" id="L72">        usuarioRepository.findByUsername(username).ifPresent(deck::setUsuario);</span>
+<span class="fc" id="L73">        int ordem = 0;</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        for (FlashcardDTO dto : cartoes) {</span>
+<span class="fc" id="L75">            deck.adicionarFlashcard(new Flashcard(dto.frente(), dto.verso(), ordem++));</span>
+<span class="fc" id="L76">        }</span>
+
+<span class="fc" id="L78">        Span.current()</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">                .setAttribute(&quot;flashcard.modo&quot;, props.isDemo() ? &quot;demo&quot; : &quot;real&quot;)</span>
+<span class="fc" id="L80">                .setAttribute(&quot;flashcard.banca&quot;, banca)</span>
+<span class="fc" id="L81">                .setAttribute(&quot;flashcard.quantidade&quot;, cartoes.size());</span>
+
+<span class="fc" id="L83">        return deckRepository.save(deck);</span>
     }
 
-    public Optional&lt;Deck&gt; buscarDeck(Long id) {
-<span class="fc" id="L72">        return deckRepository.findById(id).map(deck -&gt; {</span>
-<span class="fc" id="L73">            deck.getFlashcards().size(); // força a inicialização da coleção lazy</span>
-<span class="fc" id="L74">            return deck;</span>
+    public Optional&lt;Deck&gt; buscarDeck(Long id, String username) {
+<span class="fc" id="L87">        return deckRepository.findByIdAndUsuarioUsername(id, username).map(deck -&gt; {</span>
+<span class="fc" id="L88">            deck.getFlashcards().size(); // força a inicialização da coleção lazy</span>
+<span class="fc" id="L89">            return deck;</span>
         });
     }
 
     private String montarTitulo(String banca, String disciplina) {
-<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        String base = StringUtils.hasText(disciplina) ? disciplina</span>
-<span class="pc bnc" id="L80" title="All 2 branches missed.">                : (!&quot;Geral&quot;.equalsIgnoreCase(banca) ? banca : &quot;Deck&quot;);</span>
-<span class="fc" id="L81">        return base + &quot; — &quot; + DATA_BR.format(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        String base = StringUtils.hasText(disciplina) ? disciplina</span>
+<span class="pc bnc" id="L95" title="All 2 branches missed.">                : (!&quot;Geral&quot;.equalsIgnoreCase(banca) ? banca : &quot;Deck&quot;);</span>
+<span class="fc" id="L96">        return base + &quot; — &quot; + DATA_BR.format(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());</span>
     }
 
     private List&lt;FlashcardDTO&gt; getFlashcardsDemo() {
-<span class="fc" id="L85">        return List.of(</span>
+<span class="fc" id="L100">        return List.of(</span>
             new FlashcardDTO(&quot;O que é o princípio da legalidade na Administração Pública?&quot;, &quot;O administrador só pode fazer o que a lei autoriza ou determina (art. 37 da CF/88). Diferente do particular, que pode fazer tudo que a lei não proíbe.&quot;),
             new FlashcardDTO(&quot;Quais são os princípios expressos da Administração Pública no art. 37 da CF/88?&quot;, &quot;Legalidade, Impessoalidade, Moralidade, Publicidade e Eficiência — o mnemônico LIMPE.&quot;),
             new FlashcardDTO(&quot;Qual o prazo prescricional geral para a Fazenda Pública cobrar seus créditos tributários?&quot;, &quot;5 anos, contados do lançamento definitivo (art. 174 do CTN).&quot;),

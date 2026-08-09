@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SemanaEstudo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.domain</a> &gt; <span class="el_source">SemanaEstudo.java</span></div><h1>SemanaEstudo.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.domain;
+
+import jakarta.persistence.*;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Entidade JPA que representa um &lt;strong&gt;bloco semanal&lt;/strong&gt; do roadmap de estudos.
+ *
+ * &lt;p&gt;As datas de início e fim de cada semana são calculadas pelo servidor a partir do
+ * intervalo escolhido pelo aluno (nunca pela IA), garantindo que o plano cubra
+ * exatamente o período pedido. A IA define apenas o {@link #foco} e as tarefas.
+ *
+ * @author DSC - UFPB Campus IV
+ */
+@Entity
+@Table(name = &quot;roadmap_semana&quot;)
+public class SemanaEstudo {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;roadmap_id&quot;, nullable = false)
+    private Roadmap roadmap;
+
+    /** Posição da semana no plano, começando em 1. */
+    @Column(name = &quot;numero&quot;, nullable = false)
+    private int numero;
+
+    @Column(name = &quot;data_inicio&quot;, nullable = false)
+    private LocalDate dataInicio;
+
+    @Column(name = &quot;data_fim&quot;, nullable = false)
+    private LocalDate dataFim;
+
+    /** Tema principal da semana definido pela IA (ex.: &quot;Funções e Geometria Plana&quot;). */
+    @Column(name = &quot;foco&quot;, length = 160)
+    private String foco;
+
+<span class="fc" id="L44">    @OneToMany(mappedBy = &quot;semana&quot;, cascade = CascadeType.ALL, orphanRemoval = true)</span>
+    @OrderBy(&quot;ordem ASC&quot;)
+    private List&lt;TarefaEstudo&gt; tarefas = new ArrayList&lt;&gt;();
+
+<span class="fc" id="L48">    public SemanaEstudo() {</span>
+<span class="fc" id="L49">    }</span>
+
+<span class="fc" id="L51">    public SemanaEstudo(int numero, LocalDate dataInicio, LocalDate dataFim, String foco) {</span>
+<span class="fc" id="L52">        this.numero = numero;</span>
+<span class="fc" id="L53">        this.dataInicio = dataInicio;</span>
+<span class="fc" id="L54">        this.dataFim = dataFim;</span>
+<span class="fc" id="L55">        this.foco = foco;</span>
+<span class="fc" id="L56">    }</span>
+
+    /**
+     * Adiciona uma tarefa mantendo os dois lados da relação sincronizados.
+     *
+     * @param tarefa tarefa diária a associar à semana
+     */
+    public void adicionarTarefa(TarefaEstudo tarefa) {
+<span class="fc" id="L64">        tarefa.setSemana(this);</span>
+<span class="fc" id="L65">        this.tarefas.add(tarefa);</span>
+<span class="fc" id="L66">    }</span>
+
+    /**
+     * Carga horária total planejada para a semana.
+     *
+     * @return soma das durações das tarefas, em minutos
+     */
+    public int getTotalMinutos() {
+<span class="fc" id="L74">        return tarefas.stream().mapToInt(TarefaEstudo::getDuracaoMinutos).sum();</span>
+    }
+
+    public Long getId() {
+<span class="fc" id="L78">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="fc" id="L82">        this.id = id;</span>
+<span class="fc" id="L83">    }</span>
+
+    public Roadmap getRoadmap() {
+<span class="fc" id="L86">        return roadmap;</span>
+    }
+
+    public void setRoadmap(Roadmap roadmap) {
+<span class="fc" id="L90">        this.roadmap = roadmap;</span>
+<span class="fc" id="L91">    }</span>
+
+    public int getNumero() {
+<span class="fc" id="L94">        return numero;</span>
+    }
+
+    public void setNumero(int numero) {
+<span class="fc" id="L98">        this.numero = numero;</span>
+<span class="fc" id="L99">    }</span>
+
+    public LocalDate getDataInicio() {
+<span class="fc" id="L102">        return dataInicio;</span>
+    }
+
+    public void setDataInicio(LocalDate dataInicio) {
+<span class="fc" id="L106">        this.dataInicio = dataInicio;</span>
+<span class="fc" id="L107">    }</span>
+
+    public LocalDate getDataFim() {
+<span class="fc" id="L110">        return dataFim;</span>
+    }
+
+    public void setDataFim(LocalDate dataFim) {
+<span class="fc" id="L114">        this.dataFim = dataFim;</span>
+<span class="fc" id="L115">    }</span>
+
+    public String getFoco() {
+<span class="fc" id="L118">        return foco;</span>
+    }
+
+    public void setFoco(String foco) {
+<span class="fc" id="L122">        this.foco = foco;</span>
+<span class="fc" id="L123">    }</span>
+
+    public List&lt;TarefaEstudo&gt; getTarefas() {
+<span class="fc" id="L126">        return tarefas;</span>
+    }
+
+    public void setTarefas(List&lt;TarefaEstudo&gt; tarefas) {
+<span class="nc" id="L130">        this.tarefas = tarefas;</span>
+<span class="nc" id="L131">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

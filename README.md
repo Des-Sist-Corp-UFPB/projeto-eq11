@@ -20,6 +20,7 @@ Artificial rodando de forma **segura no backend**, dentro de um sistema corporat
 - [Acesso e portas](#-acesso-e-portas)
 - [Banco de dados e migrations](#-banco-de-dados-e-migrations)
 - [Testes](#-testes)
+- [Observabilidade (Grafana/OpenTelemetry + Umami)](#-observabilidade-grafanaopentelemetry--umami)
 - [Segurança (SAST)](#-segurança-sast)
 - [CI/CD e Deploy](#-cicd-e-deploy)
 - [Convenções de código](#-convenções-de-código)
@@ -94,6 +95,8 @@ O desenvolvimento é incremental. Cada fase entrega algo demonstrável.
 | Container | Docker + Docker Compose | — |
 | CI/CD | GitHub Actions + GHCR | — |
 | SAST | SpotBugs + FindSecBugs, OWASP Dependency-Check, Semgrep, Trivy | — |
+| Observabilidade (backend) | OpenTelemetry (agente Java) → Grafana/Loki/Tempo | — |
+| Analytics (frontend) | Umami | — |
 
 ---
 
@@ -160,13 +163,14 @@ responsabilidades são separadas em camadas bem definidas:
 ### Pacotes (`br.ufpb.dsc.studyai`)
 | Pacote | Responsabilidade |
 |--------|------------------|
-| `config/` | `SecurityConfig`, `IAProperties`, `GlobalModelAttributes` |
+| `audit/` | Trilha de auditoria (`AuditLog`, service, listeners) |
+| `config/` | `SecurityConfig`, `LangChain4jConfig`, `IAProperties`, `GlobalModelAttributes` |
 | `controller/` | Recebem requisições HTTP/HTMX e devolvem views/fragmentos |
-| `domain/` | Entidades JPA (`Deck`, `Flashcard`) |
+| `domain/` | Entidades JPA (`Deck`/`Flashcard`, `Redacao`/`Criterio`, `Roadmap`/`SemanaEstudo`/`TarefaEstudo`, `Usuario`) |
 | `dto/` | Records de entrada/saída |
 | `exception/` | Exceções de domínio (`IAIndisponivelException`) |
 | `repository/` | Interfaces Spring Data JPA |
-| `service/` | Lógica de negócio + integração com IA |
+| `service/` | Lógica de negócio + integração com IA (`@AiService`) |
 
 ---
 
@@ -284,17 +288,56 @@ mvn clean test jacoco:report   # idem, partindo do zero
 mvn verify                # testes + cobertura na fase verify
 ```
 
-A suíte tem **72 testes** e roda **com ou sem Docker**: os testes unitários e de fatia
-(Mockito, `@WebMvcTest`, `MockRestServiceServer`) não precisam de banco; o teste de
+A suíte tem **102 testes** e roda **com ou sem Docker**: os testes unitários e de fatia
+(Mockito, `@WebMvcTest`) não precisam de banco; o teste de
 integração `StudyAiApplicationTests` sobe um PostgreSQL real via **Testcontainers** e é
 **automaticamente pulado** quando o Docker não está disponível
 (`@Testcontainers(disabledWithoutDocker = true)`).
 
 ### Cobertura de testes
 
-**Cobertura de testes total: 91%** (instruções 91%, ramos 67%) — bem acima do mínimo de 85% exigido.
+**Cobertura de instruções: 89%** (ramos 68%) — **acima do mínimo de 85% exigido**.
 Relatório versionado em [`cobertura/jacoco/index.html`](cobertura/jacoco/index.html)
 (gerado com JaCoCo; a classe de bootstrap `StudyAiApplication` é excluída da medição).
+A cobertura abrange os três módulos de IA, o domínio (`Deck`, `Redacao`, `Roadmap` e
+filhos), a autenticação por banco (`UsuarioService`) e a trilha de auditoria.
+
+---
+
+## 📊 Observabilidade (Grafana/OpenTelemetry + Umami)
+
+Duas camadas distintas: o **OpenTelemetry** instrumenta o **backend** (traces, métricas e
+logs do servidor) e o **Umami** mede o **frontend** (visitas, páginas, navegador). Os dois
+backends são **centrais da disciplina** — a aplicação só aponta para lá.
+
+### OpenTelemetry → Grafana (traces, métricas, logs)
+
+- **Como funciona:** um **agente Java** é anexado à JVM no [`docker/Dockerfile`](docker/Dockerfile)
+  (`-javaagent`). Ele instrumenta **sem código** o Spring MVC (cada requisição vira um *trace*),
+  o JDBC (cada query PostgreSQL vira um *span*), métricas da JVM e os logs do Logback (enviados
+  ao Loki, já correlacionados por `trace_id`/`span_id`).
+- **Spans manuais de negócio:** `FlashcardService.gerar`, `CorretorService.avaliar` e
+  `RoadmapService.gerar` são anotados com `@WithSpan`, com atributos como `roadmap.semanas`,
+  `flashcard.banca` e `*.modo` (`demo`/`real`).
+- **Configuração** (no `.env` de produção — o backend é `otel.dsc.rodrigor.com`):
+  ```env
+  OTEL_SDK_DISABLED=false                                          # OBRIGATÓRIO para ligar
+  OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <TOKEN_DA_TURMA> # token vem do Discord (nunca versionar)
+  ```
+  > O `OTEL_SERVICE_NAME=dsc-eq11` já é o default no compose — é por ele que a equipe se
+  > acha no painel compartilhado. Ligar exige **as duas** variáveis: só o token não basta
+  > (fica `OTEL_SDK_DISABLED=true` e nada é exportado).
+- **Ver no painel:** <https://otel.dsc.rodrigor.com> → **Explore** → **Tempo**, filtrando
+  `Service Name = dsc-eq11` (traces) ou **Loki** com `{service_name="dsc-eq11"}` (logs).
+
+### Umami (analytics de frontend)
+
+- **Como funciona:** um `<script>` no [`layout.html`](src/main/resources/templates/studyai/layout.html)
+  (e nas telas de login) envia um *pageview* ao servidor do Umami a cada página aberta.
+- **Configuração:** os valores da eq11 já são o default no [`docker-compose.yml`](docker-compose.yml)
+  (`UMAMI_SRC` e `UMAMI_WEBSITE_ID`). O `website-id` **não é segredo** (fica visível no HTML),
+  por isso pode ir versionado. Localmente (`mvn spring-boot:run`) fica desligado, para o
+  tráfego de teste não poluir os números.
 
 ---
 
@@ -339,7 +382,9 @@ Registra as ações de usuário relevantes do sistema, para rastreabilidade.
 ## 🔌 Integração com Serviço Externo
 
 > O **PostgreSQL** fornecido pela disciplina é infraestrutura básica e **não** conta como
-> integração externa. As integrações implementadas são de **IA** e **Autenticação (OAuth2)**.
+> integração externa. As integrações implementadas são de **IA**, **Autenticação (OAuth2)**
+> e **Observabilidade** (OpenTelemetry/Grafana + Umami — detalhadas na seção
+> [Observabilidade](#-observabilidade-grafanaopentelemetry--umami)).
 
 ### 1. IA (LangChain4j — os três módulos)
 - **Qual serviço:** provedores de LLM acessados pelo **LangChain4j** — **Anthropic Claude**,
@@ -360,9 +405,13 @@ Registra as ações de usuário relevantes do sistema, para rastreabilidade.
   | Variável | Função |
   |----------|--------|
   | `STUDYAI_AI_MODO` | `demo` (padrão) ou `real` |
-  | `STUDYAI_AI_PROVEDOR` | `anthropic` ou `gemini` |
+  | `STUDYAI_AI_PROVEDOR` | `openai` (padrão), `anthropic` ou `gemini` |
   | `STUDYAI_AI_API_KEY` | chave do provedor (somente em ambiente, nunca versionada) |
-  | `STUDYAI_AI_MODELO` | modelo a usar no provedor |
+  | `STUDYAI_AI_MODELO` | modelo a usar no provedor (precisa ser do mesmo provedor) |
+
+  > ⚠️ **Cuidado:** a app lê `STUDYAI_AI_API_KEY` (não `OPENAI_API_KEY`). Sem essa
+  > variável, `isDemo()` volta ao **modo demo em silêncio**, mesmo com `modo=real`.
+  > E o modelo precisa bater com o provedor (`openai` → `gpt-*`, `anthropic` → `claude-*`).
 
   **Importante para avaliação:** `IAProperties.isDemo()` retorna `true` por padrão quando
   **não há chave configurada** (ou `modo=demo`). Ou seja, **a integração existe e está
@@ -416,6 +465,12 @@ O pipeline ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) roda
   DB_PASSWORD=<senha-forte>
   GOOGLE_CLIENT_ID=<id-gerado-no-cloud>
   GOOGLE_CLIENT_SECRET=<secret-gerado-no-cloud>
+  # IA real (opcional) — sem STUDYAI_AI_API_KEY, a app roda em modo demo
+  STUDYAI_AI_MODO=real
+  STUDYAI_AI_API_KEY=<chave-do-provedor>
+  # Observabilidade (opcional) — liga o OpenTelemetry
+  OTEL_SDK_DISABLED=false
+  OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token-da-turma>
   ```
   > Regra de formatação: **sem espaços** ao redor do `=`.
 

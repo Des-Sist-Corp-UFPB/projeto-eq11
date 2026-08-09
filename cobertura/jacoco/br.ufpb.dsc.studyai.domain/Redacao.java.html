@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Redacao.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.domain</a> &gt; <span class="el_source">Redacao.java</span></div><h1>Redacao.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.domain;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = &quot;redacao&quot;)
+public class Redacao {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 100)
+    private String banca;
+
+    @Column(nullable = false, length = 255)
+    private String tema;
+
+    @Column(nullable = false, columnDefinition = &quot;TEXT&quot;)
+    private String texto;
+
+    @Column(name = &quot;nota_total&quot;, nullable = false)
+    private Double notaTotal;
+
+    @Column(name = &quot;comentario_geral&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String comentarioGeral;
+
+    @Column(name = &quot;criado_em&quot;, nullable = false, updatable = false)
+    private LocalDateTime criadoEm;
+
+    @ManyToOne
+    @JoinColumn(name = &quot;usuario_id&quot;)
+    private Usuario usuario;
+
+<span class="fc" id="L38">    @OneToMany(mappedBy = &quot;redacao&quot;, cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)</span>
+    private List&lt;Criterio&gt; criterios = new ArrayList&lt;&gt;();
+
+<span class="fc" id="L41">    public Redacao() {</span>
+<span class="fc" id="L42">    }</span>
+
+<span class="fc" id="L44">    public Redacao(String banca, String tema, String texto, Double notaTotal, String comentarioGeral) {</span>
+<span class="fc" id="L45">        this.banca = banca;</span>
+<span class="fc" id="L46">        this.tema = tema;</span>
+<span class="fc" id="L47">        this.texto = texto;</span>
+<span class="fc" id="L48">        this.notaTotal = notaTotal;</span>
+<span class="fc" id="L49">        this.comentarioGeral = comentarioGeral;</span>
+<span class="fc" id="L50">    }</span>
+
+    @PrePersist
+    protected void onCreate() {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (criadoEm == null) {</span>
+<span class="fc" id="L55">            criadoEm = LocalDateTime.now();</span>
+        }
+<span class="fc" id="L57">    }</span>
+
+    public void adicionarCriterio(Criterio criterio) {
+<span class="fc" id="L60">        criterio.setRedacao(this);</span>
+<span class="fc" id="L61">        this.criterios.add(criterio);</span>
+<span class="fc" id="L62">    }</span>
+
+    // Getters and Setters
+
+    public Long getId() {
+<span class="fc" id="L67">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="fc" id="L71">        this.id = id;</span>
+<span class="fc" id="L72">    }</span>
+
+    public String getBanca() {
+<span class="fc" id="L75">        return banca;</span>
+    }
+
+    public void setBanca(String banca) {
+<span class="fc" id="L79">        this.banca = banca;</span>
+<span class="fc" id="L80">    }</span>
+
+    public String getTema() {
+<span class="fc" id="L83">        return tema;</span>
+    }
+
+    public void setTema(String tema) {
+<span class="fc" id="L87">        this.tema = tema;</span>
+<span class="fc" id="L88">    }</span>
+
+    public String getTexto() {
+<span class="fc" id="L91">        return texto;</span>
+    }
+
+    public void setTexto(String texto) {
+<span class="fc" id="L95">        this.texto = texto;</span>
+<span class="fc" id="L96">    }</span>
+
+    public Double getNotaTotal() {
+<span class="fc" id="L99">        return notaTotal;</span>
+    }
+
+    public void setNotaTotal(Double notaTotal) {
+<span class="fc" id="L103">        this.notaTotal = notaTotal;</span>
+<span class="fc" id="L104">    }</span>
+
+    public String getComentarioGeral() {
+<span class="fc" id="L107">        return comentarioGeral;</span>
+    }
+
+    public void setComentarioGeral(String comentarioGeral) {
+<span class="fc" id="L111">        this.comentarioGeral = comentarioGeral;</span>
+<span class="fc" id="L112">    }</span>
+
+    public LocalDateTime getCriadoEm() {
+<span class="fc" id="L115">        return criadoEm;</span>
+    }
+
+    public void setCriadoEm(LocalDateTime criadoEm) {
+<span class="fc" id="L119">        this.criadoEm = criadoEm;</span>
+<span class="fc" id="L120">    }</span>
+
+    public List&lt;Criterio&gt; getCriterios() {
+<span class="fc" id="L123">        return criterios;</span>
+    }
+
+    public void setCriterios(List&lt;Criterio&gt; criterios) {
+<span class="nc" id="L127">        this.criterios = criterios;</span>
+<span class="nc" id="L128">    }</span>
+
+    public Usuario getUsuario() {
+<span class="fc" id="L131">        return usuario;</span>
+    }
+
+    public void setUsuario(Usuario usuario) {
+<span class="fc" id="L135">        this.usuario = usuario;</span>
+<span class="fc" id="L136">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

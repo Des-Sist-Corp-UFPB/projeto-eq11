@@ -40,6 +40,10 @@ public class Deck {
     @Column(name = &quot;criado_em&quot;, nullable = false, updatable = false)
     private Instant criadoEm;
 
+    @ManyToOne
+    @JoinColumn(name = &quot;usuario_id&quot;)
+    private Usuario usuario;
+
     /**
      * Cartões do deck.
      *
@@ -49,25 +53,25 @@ public class Deck {
      *
      * &lt;p&gt;{@code @OrderBy(&quot;ordem&quot;)} garante que a lista venha ordenada pela posição.
      */
-<span class="fc" id="L52">    @OneToMany(mappedBy = &quot;deck&quot;, cascade = CascadeType.ALL, orphanRemoval = true)</span>
+<span class="fc" id="L56">    @OneToMany(mappedBy = &quot;deck&quot;, cascade = CascadeType.ALL, orphanRemoval = true)</span>
     @OrderBy(&quot;ordem ASC&quot;)
     private List&lt;Flashcard&gt; flashcards = new ArrayList&lt;&gt;();
 
     @PrePersist
     protected void prePersist() {
-<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (this.criadoEm == null) {</span>
-<span class="fc" id="L59">            this.criadoEm = Instant.now();</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (this.criadoEm == null) {</span>
+<span class="fc" id="L63">            this.criadoEm = Instant.now();</span>
         }
-<span class="fc" id="L61">    }</span>
+<span class="fc" id="L65">    }</span>
 
-<span class="fc" id="L63">    public Deck() {</span>
-<span class="fc" id="L64">    }</span>
+<span class="fc" id="L67">    public Deck() {</span>
+<span class="fc" id="L68">    }</span>
 
-<span class="fc" id="L66">    public Deck(String titulo, String banca, String disciplina) {</span>
-<span class="fc" id="L67">        this.titulo = titulo;</span>
-<span class="fc" id="L68">        this.banca = banca;</span>
-<span class="fc" id="L69">        this.disciplina = disciplina;</span>
-<span class="fc" id="L70">    }</span>
+<span class="fc" id="L70">    public Deck(String titulo, String banca, String disciplina) {</span>
+<span class="fc" id="L71">        this.titulo = titulo;</span>
+<span class="fc" id="L72">        this.banca = banca;</span>
+<span class="fc" id="L73">        this.disciplina = disciplina;</span>
+<span class="fc" id="L74">    }</span>
 
     /**
      * Adiciona um flashcard mantendo os dois lados da relação sincronizados.
@@ -75,56 +79,64 @@ public class Deck {
      * @param flashcard cartão a associar ao deck
      */
     public void adicionarFlashcard(Flashcard flashcard) {
-<span class="fc" id="L78">        flashcard.setDeck(this);</span>
-<span class="fc" id="L79">        this.flashcards.add(flashcard);</span>
-<span class="fc" id="L80">    }</span>
+<span class="fc" id="L82">        flashcard.setDeck(this);</span>
+<span class="fc" id="L83">        this.flashcards.add(flashcard);</span>
+<span class="fc" id="L84">    }</span>
 
     public Long getId() {
-<span class="fc" id="L83">        return id;</span>
+<span class="fc" id="L87">        return id;</span>
     }
 
     public void setId(Long id) {
-<span class="fc" id="L87">        this.id = id;</span>
-<span class="fc" id="L88">    }</span>
+<span class="fc" id="L91">        this.id = id;</span>
+<span class="fc" id="L92">    }</span>
 
     public String getTitulo() {
-<span class="fc" id="L91">        return titulo;</span>
+<span class="fc" id="L95">        return titulo;</span>
     }
 
     public void setTitulo(String titulo) {
-<span class="fc" id="L95">        this.titulo = titulo;</span>
-<span class="fc" id="L96">    }</span>
+<span class="fc" id="L99">        this.titulo = titulo;</span>
+<span class="fc" id="L100">    }</span>
 
     public String getBanca() {
-<span class="fc" id="L99">        return banca;</span>
+<span class="fc" id="L103">        return banca;</span>
     }
 
     public void setBanca(String banca) {
-<span class="fc" id="L103">        this.banca = banca;</span>
-<span class="fc" id="L104">    }</span>
+<span class="fc" id="L107">        this.banca = banca;</span>
+<span class="fc" id="L108">    }</span>
 
     public String getDisciplina() {
-<span class="fc" id="L107">        return disciplina;</span>
+<span class="fc" id="L111">        return disciplina;</span>
     }
 
     public void setDisciplina(String disciplina) {
-<span class="fc" id="L111">        this.disciplina = disciplina;</span>
-<span class="fc" id="L112">    }</span>
+<span class="fc" id="L115">        this.disciplina = disciplina;</span>
+<span class="fc" id="L116">    }</span>
 
     public Instant getCriadoEm() {
-<span class="fc" id="L115">        return criadoEm;</span>
+<span class="fc" id="L119">        return criadoEm;</span>
     }
 
     public void setCriadoEm(Instant criadoEm) {
-<span class="fc" id="L119">        this.criadoEm = criadoEm;</span>
-<span class="fc" id="L120">    }</span>
+<span class="fc" id="L123">        this.criadoEm = criadoEm;</span>
+<span class="fc" id="L124">    }</span>
 
     public List&lt;Flashcard&gt; getFlashcards() {
-<span class="fc" id="L123">        return flashcards;</span>
+<span class="fc" id="L127">        return flashcards;</span>
     }
 
     public void setFlashcards(List&lt;Flashcard&gt; flashcards) {
-<span class="nc" id="L127">        this.flashcards = flashcards;</span>
-<span class="nc" id="L128">    }</span>
+<span class="nc" id="L131">        this.flashcards = flashcards;</span>
+<span class="nc" id="L132">    }</span>
+
+    public Usuario getUsuario() {
+<span class="nc" id="L135">        return usuario;</span>
+    }
+
+    public void setUsuario(Usuario usuario) {
+<span class="nc" id="L139">        this.usuario = usuario;</span>
+<span class="nc" id="L140">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

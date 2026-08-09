@@ -1,6 +1,7 @@
 package br.ufpb.dsc.studyai.config;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -31,6 +32,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 @ControllerAdvice
 public class GlobalModelAttributes {
 
+    /** URL do script do Umami (vazia = analytics desligado). */
+    @Value("${studyai.umami.src:}")
+    private String umamiSrc;
+
+    /** Identificador do site no Umami (vazio = analytics desligado). */
+    @Value("${studyai.umami.website-id:}")
+    private String umamiWebsiteId;
+
     /**
      * Disponibiliza a URI da requisição atual para todos os templates.
      *
@@ -42,5 +51,26 @@ public class GlobalModelAttributes {
     @ModelAttribute("requestURI")
     public String requestURI(HttpServletRequest request) {
         return request.getRequestURI();
+    }
+
+    /**
+     * URL do script do Umami, para o layout injetar o snippet de analytics.
+     *
+     * @return src configurado, ou string vazia quando o Umami está desligado
+     */
+    @ModelAttribute("umamiSrc")
+    public String umamiSrc() {
+        return umamiSrc;
+    }
+
+    /**
+     * Identificador do site no Umami. O layout só injeta o script quando este valor
+     * está presente, então a página funciona normalmente sem analytics configurado.
+     *
+     * @return website-id configurado, ou string vazia quando o Umami está desligado
+     */
+    @ModelAttribute("umamiWebsiteId")
+    public String umamiWebsiteId() {
+        return umamiWebsiteId;
     }
 }

@@ -28,6 +28,13 @@
 
     <!-- Estilo do StudyAI -->
     <link rel="stylesheet" th:href="@{/css/studyai.css}"/>
+
+    <!-- Analytics de frontend (Umami): só é injetado quando UMAMI_SRC e UMAMI_WEBSITE_ID
+         estão configurados. 'defer' não bloqueia o carregamento da página. -->
+    <script th:if="${umamiWebsiteId != null and !umamiWebsiteId.isEmpty()}"
+            th:src="${umamiSrc}"
+            th:attr="data-website-id=${umamiWebsiteId}"
+            defer="defer"></script>
 </head>
 <body>
 

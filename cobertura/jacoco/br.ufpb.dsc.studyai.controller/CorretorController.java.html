@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CorretorController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.controller</a> &gt; <span class="el_source">CorretorController.java</span></div><h1>CorretorController.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.controller;
+
+import br.ufpb.dsc.studyai.audit.AuditLogService;
+import br.ufpb.dsc.studyai.domain.Redacao;
+import br.ufpb.dsc.studyai.dto.CorretorRequest;
+import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
+import br.ufpb.dsc.studyai.service.CorretorService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.security.Principal;
+
+@Controller
+@RequestMapping(&quot;/corretor&quot;)
+public class CorretorController {
+
+    private final CorretorService corretorService;
+    private final AuditLogService auditLogService;
+
+<span class="fc" id="L25">    public CorretorController(CorretorService corretorService, AuditLogService auditLogService) {</span>
+<span class="fc" id="L26">        this.corretorService = corretorService;</span>
+<span class="fc" id="L27">        this.auditLogService = auditLogService;</span>
+<span class="fc" id="L28">    }</span>
+
+    @GetMapping
+    public String pagina(Model model) {
+<span class="fc" id="L32">        model.addAttribute(&quot;titulo&quot;, &quot;CorretorIA&quot;);</span>
+<span class="fc" id="L33">        return &quot;studyai/corretor&quot;;</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public String abrirRedacao(@PathVariable Long id, Model model, Principal principal) {
+<span class="nc" id="L38">        model.addAttribute(&quot;titulo&quot;, &quot;CorretorIA&quot;);</span>
+<span class="nc" id="L39">        var redacaoOpt = corretorService.buscarRedacao(id, principal.getName());</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (redacaoOpt.isPresent()) {</span>
+<span class="nc" id="L41">            model.addAttribute(&quot;redacao&quot;, redacaoOpt.get());</span>
+        }
+<span class="nc" id="L43">        return &quot;studyai/corretor&quot;;</span>
+    }
+
+    @PostMapping(&quot;/avaliar&quot;)
+    public String avaliar(@ModelAttribute CorretorRequest request, Model model, Principal principal) {
+        try {
+<span class="fc" id="L49">            Redacao redacao = corretorService.avaliar(request, principal.getName());</span>
+
+<span class="fc" id="L51">            auditLogService.registrar(</span>
+<span class="fc" id="L52">                    &quot;AVALIAR_REDACAO&quot;, &quot;redacao&quot;, redacao.getId(),</span>
+<span class="fc" id="L53">                    &quot;banca=&quot; + redacao.getBanca() + &quot;; nota=&quot; + redacao.getNotaTotal());</span>
+
+<span class="fc" id="L55">            model.addAttribute(&quot;redacao&quot;, redacao);</span>
+<span class="fc" id="L56">            return &quot;studyai/fragments/corretor-result :: avaliacao&quot;;</span>
+<span class="fc" id="L57">        } catch (IAIndisponivelException e) {</span>
+<span class="fc" id="L58">            model.addAttribute(&quot;mensagem&quot;, e.getMessage());</span>
+<span class="fc" id="L59">            return &quot;studyai/fragments/corretor-result :: erro&quot;;</span>
+<span class="nc" id="L60">        } catch (Exception e) {</span>
+<span class="nc" id="L61">            model.addAttribute(&quot;mensagem&quot;, &quot;Ocorreu um erro interno ao processar a redação.&quot;);</span>
+<span class="nc" id="L62">            return &quot;studyai/fragments/corretor-result :: erro&quot;;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

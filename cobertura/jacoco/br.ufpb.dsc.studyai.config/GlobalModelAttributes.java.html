@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalModelAttributes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.config</a> &gt; <span class="el_source">GlobalModelAttributes.java</span></div><h1>GlobalModelAttributes.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.config;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -29,7 +30,15 @@ import org.springframework.web.bind.annotation.ModelAttribute;
  * @author DSC - UFPB Campus IV
  */
 @ControllerAdvice
-<span class="fc" id="L32">public class GlobalModelAttributes {</span>
+<span class="fc" id="L33">public class GlobalModelAttributes {</span>
+
+    /** URL do script do Umami (vazia = analytics desligado). */
+    @Value(&quot;${studyai.umami.src:}&quot;)
+    private String umamiSrc;
+
+    /** Identificador do site no Umami (vazio = analytics desligado). */
+    @Value(&quot;${studyai.umami.website-id:}&quot;)
+    private String umamiWebsiteId;
 
     /**
      * Disponibiliza a URI da requisição atual para todos os templates.
@@ -41,7 +50,28 @@ import org.springframework.web.bind.annotation.ModelAttribute;
      */
     @ModelAttribute(&quot;requestURI&quot;)
     public String requestURI(HttpServletRequest request) {
-<span class="fc" id="L44">        return request.getRequestURI();</span>
+<span class="fc" id="L53">        return request.getRequestURI();</span>
+    }
+
+    /**
+     * URL do script do Umami, para o layout injetar o snippet de analytics.
+     *
+     * @return src configurado, ou string vazia quando o Umami está desligado
+     */
+    @ModelAttribute(&quot;umamiSrc&quot;)
+    public String umamiSrc() {
+<span class="fc" id="L63">        return umamiSrc;</span>
+    }
+
+    /**
+     * Identificador do site no Umami. O layout só injeta o script quando este valor
+     * está presente, então a página funciona normalmente sem analytics configurado.
+     *
+     * @return website-id configurado, ou string vazia quando o Umami está desligado
+     */
+    @ModelAttribute(&quot;umamiWebsiteId&quot;)
+    public String umamiWebsiteId() {
+<span class="fc" id="L74">        return umamiWebsiteId;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

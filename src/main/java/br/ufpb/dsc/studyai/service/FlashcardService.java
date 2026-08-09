@@ -7,6 +7,9 @@ import br.ufpb.dsc.studyai.dto.FlashcardDTO;
 import br.ufpb.dsc.studyai.dto.FlashcardRequest;
 import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
 import br.ufpb.dsc.studyai.repository.DeckRepository;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -37,7 +40,8 @@ public class FlashcardService {
     }
 
     @Transactional
-    public Deck gerar(FlashcardRequest request, String username) {
+    @WithSpan("flashcard.gerar")
+    public Deck gerar(FlashcardRequest request, @SpanAttribute("flashcard.usuario") String username) {
         String banca = StringUtils.hasText(request.banca()) ? request.banca().trim() : "Geral";
         String disciplina = request.disciplina() == null ? "" : request.disciplina().trim();
         int quantidade = request.quantidade() <= 0 ? 15 : Math.min(request.quantidade(), 30);
@@ -70,6 +74,12 @@ public class FlashcardService {
         for (FlashcardDTO dto : cartoes) {
             deck.adicionarFlashcard(new Flashcard(dto.frente(), dto.verso(), ordem++));
         }
+
+        Span.current()
+                .setAttribute("flashcard.modo", props.isDemo() ? "demo" : "real")
+                .setAttribute("flashcard.banca", banca)
+                .setAttribute("flashcard.quantidade", cartoes.size());
+
         return deckRepository.save(deck);
     }
 

@@ -89,6 +89,26 @@ services:
       STUDYAI_AI_TIMEOUT: ${STUDYAI_AI_TIMEOUT:-120}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      # === OBSERVABILIDADE: OpenTelemetry -> Grafana central da disciplina ===
+      # Desligado por padrão. Para ativar, defina no .env:
+      #   OTEL_SDK_DISABLED=false
+      #   OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <TOKEN_DA_TURMA>   (token vem do Discord)
+      # O nome do serviço identifica a equipe no painel compartilhado — NÃO mude o padrão.
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-true}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-dsc-eq11}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-https://otel.dsc.rodrigor.com}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-otlp}
+      OTEL_LOGS_EXPORTER: ${OTEL_LOGS_EXPORTER:-otlp}
+      # === ANALYTICS DE FRONTEND: Umami ===
+      # O website-id NÃO é segredo (fica visível no HTML de toda página), então os
+      # valores reais da eq11 ficam aqui como default — no container (prod) o analytics
+      # já sobe ligado. Localmente (mvn spring-boot:run) fica desligado, para o tráfego
+      # de teste não poluir os números do painel.
+      UMAMI_SRC: ${UMAMI_SRC:-https://umami.dsc.rodrigor.com/script.js}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-e7a86adb-188c-484e-bc25-fee706cf920b}
     ports:
       # Porta exigida pelo professor — vinculada apenas ao localhost do servidor
       - "127.0.0.1:8111:8080"

@@ -7,6 +7,9 @@ import br.ufpb.dsc.studyai.dto.CorretorRequest;
 import br.ufpb.dsc.studyai.dto.CorretorResponse;
 import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
 import br.ufpb.dsc.studyai.repository.RedacaoRepository;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -36,7 +39,12 @@ public class CorretorService {
     }
 
     @Transactional
-    public Redacao avaliar(CorretorRequest request, String username) {
+    @WithSpan("corretor.avaliar")
+    public Redacao avaliar(CorretorRequest request, @SpanAttribute("corretor.usuario") String username) {
+        Span.current()
+                .setAttribute("corretor.modo", iaProperties.isDemo() ? "demo" : "real")
+                .setAttribute("corretor.banca", request.banca() != null ? request.banca() : "");
+
         if (iaProperties.isDemo()) {
             return gerarAvaliacaoMock(request, username);
         }
