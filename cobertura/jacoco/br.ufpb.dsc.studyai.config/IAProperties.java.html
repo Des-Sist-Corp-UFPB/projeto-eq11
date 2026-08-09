@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IAProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.config</a> &gt; <span class="el_source">IAProperties.java</span></div><h1>IAProperties.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.StringUtils;
+
+/**
+ * Propriedades de configuração da IA, lidas do prefixo {@code studyai.ia}.
+ *
+ * &lt;p&gt;Os valores vêm do {@code application.yml}, que por sua vez lê variáveis de
+ * ambiente — a chave de API &lt;strong&gt;nunca&lt;/strong&gt; é versionada no código.
+ *
+ * &lt;p&gt;Mapeamento (kebab-case → camelCase):
+ * &lt;pre&gt;
+ *   studyai.ia.modo             → modo
+ *   studyai.ia.provedor         → provedor
+ *   studyai.ia.api-key          → apiKey
+ *   studyai.ia.modelo           → modelo
+ *   studyai.ia.timeout-segundos → timeoutSegundos
+ * &lt;/pre&gt;
+ *
+ * @author DSC - UFPB Campus IV
+ */
+@ConfigurationProperties(prefix = &quot;studyai.ia&quot;)
+<span class="fc" id="L24">public class IAProperties {</span>
+
+    /** &quot;demo&quot; para flashcards de exemplo sem chamada externa; &quot;real&quot; para chamar o provedor. */
+<span class="fc" id="L27">    private String modo = &quot;demo&quot;;</span>
+
+    /** Provedor de IA: &quot;anthropic&quot; ou &quot;gemini&quot;. */
+<span class="fc" id="L30">    private String provedor = &quot;anthropic&quot;;</span>
+
+    /** Chave de API do provedor (via env STUDYAI_AI_API_KEY). Vazia em modo demo. */
+<span class="fc" id="L33">    private String apiKey = &quot;&quot;;</span>
+
+    /** Modelo a ser usado no provedor (via env STUDYAI_AI_MODELO). */
+<span class="fc" id="L36">    private String modelo = &quot;&quot;;</span>
+
+    /** Timeout das chamadas de IA (chamadas de LLM levam de 5 a 30s). */
+<span class="fc" id="L39">    private int timeoutSegundos = 45;</span>
+
+    /**
+     * Indica se a aplicação deve operar em modo demonstração.
+     *
+     * &lt;p&gt;É demo quando {@code modo=demo} (padrão) OU quando não há chave de API
+     * configurada — garantindo que a demo do pitch funcione sem internet/chave.
+     *
+     * @return {@code true} se deve retornar flashcards de exemplo
+     */
+    public boolean isDemo() {
+<span class="fc bfc" id="L50" title="All 4 branches covered.">        return &quot;demo&quot;.equalsIgnoreCase(modo) || !StringUtils.hasText(apiKey);</span>
+    }
+
+    public String getModo() {
+<span class="fc" id="L54">        return modo;</span>
+    }
+
+    public void setModo(String modo) {
+<span class="fc" id="L58">        this.modo = modo;</span>
+<span class="fc" id="L59">    }</span>
+
+    public String getProvedor() {
+<span class="fc" id="L62">        return provedor;</span>
+    }
+
+    public void setProvedor(String provedor) {
+<span class="fc" id="L66">        this.provedor = provedor;</span>
+<span class="fc" id="L67">    }</span>
+
+    public String getApiKey() {
+<span class="fc" id="L70">        return apiKey;</span>
+    }
+
+    public void setApiKey(String apiKey) {
+<span class="fc" id="L74">        this.apiKey = apiKey;</span>
+<span class="fc" id="L75">    }</span>
+
+    public String getModelo() {
+<span class="fc" id="L78">        return modelo;</span>
+    }
+
+    public void setModelo(String modelo) {
+<span class="fc" id="L82">        this.modelo = modelo;</span>
+<span class="fc" id="L83">    }</span>
+
+    public int getTimeoutSegundos() {
+<span class="fc" id="L86">        return timeoutSegundos;</span>
+    }
+
+    public void setTimeoutSegundos(int timeoutSegundos) {
+<span class="fc" id="L90">        this.timeoutSegundos = timeoutSegundos;</span>
+<span class="fc" id="L91">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

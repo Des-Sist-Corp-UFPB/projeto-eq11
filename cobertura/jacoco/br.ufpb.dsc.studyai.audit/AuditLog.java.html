@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuditLog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.audit</a> &gt; <span class="el_source">AuditLog.java</span></div><h1>AuditLog.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.audit;
+
+import jakarta.persistence.*;
+
+import java.time.Instant;
+
+/**
+ * Entidade JPA que representa um registro de &lt;strong&gt;log de auditoria&lt;/strong&gt;.
+ *
+ * &lt;p&gt;Cada linha guarda uma ação relevante de usuário (login, logout, geração de
+ * flashcard), com quem fez, quando, de qual IP e detalhes livres. É um registro
+ * &lt;em&gt;append-only&lt;/em&gt;: nunca é alterado nem apagado pela aplicação.
+ *
+ * &lt;p&gt;O schema é controlado pelo Flyway (migração {@code V4__audit_log.sql}); aqui
+ * apenas mapeamos as colunas, sem deixar o Hibernate alterar o banco
+ * ({@code ddl-auto: validate}).
+ *
+ * @author DSC - UFPB Campus IV
+ */
+@Entity
+@Table(name = &quot;audit_log&quot;)
+public class AuditLog {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /** Usuário autenticado que realizou a ação (ou {@code &quot;anonimo&quot;} se não houver). */
+    @Column(name = &quot;usuario&quot;, length = 120)
+    private String usuario;
+
+    /** Ação realizada, em caixa alta (ex.: {@code LOGIN}, {@code LOGOUT}, {@code GERAR_FLASHCARD}). */
+    @Column(name = &quot;acao&quot;, nullable = false, length = 60)
+    private String acao;
+
+    /** Entidade afetada, quando aplicável (ex.: {@code deck}). Pode ser nulo. */
+    @Column(name = &quot;entidade&quot;, length = 60)
+    private String entidade;
+
+    /** Identificador da entidade afetada, quando aplicável. Pode ser nulo. */
+    @Column(name = &quot;entidade_id&quot;)
+    private Long entidadeId;
+
+    /** Detalhes livres da ação (ex.: quantidade de cartões, banca). Pode ser nulo. */
+    @Column(name = &quot;detalhes&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String detalhes;
+
+    /** IP de origem da requisição (suporta IPv6, por isso 45 caracteres). Pode ser nulo. */
+    @Column(name = &quot;ip&quot;, length = 45)
+    private String ip;
+
+    @Column(name = &quot;data_hora&quot;, nullable = false, updatable = false)
+    private Instant dataHora;
+
+    @PrePersist
+    protected void prePersist() {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (this.dataHora == null) {</span>
+<span class="fc" id="L58">            this.dataHora = Instant.now();</span>
+        }
+<span class="fc" id="L60">    }</span>
+
+<span class="fc" id="L62">    public AuditLog() {</span>
+<span class="fc" id="L63">    }</span>
+
+<span class="fc" id="L65">    public AuditLog(String usuario, String acao, String entidade, Long entidadeId, String detalhes, String ip) {</span>
+<span class="fc" id="L66">        this.usuario = usuario;</span>
+<span class="fc" id="L67">        this.acao = acao;</span>
+<span class="fc" id="L68">        this.entidade = entidade;</span>
+<span class="fc" id="L69">        this.entidadeId = entidadeId;</span>
+<span class="fc" id="L70">        this.detalhes = detalhes;</span>
+<span class="fc" id="L71">        this.ip = ip;</span>
+<span class="fc" id="L72">    }</span>
+
+    public Long getId() {
+<span class="fc" id="L75">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="fc" id="L79">        this.id = id;</span>
+<span class="fc" id="L80">    }</span>
+
+    public String getUsuario() {
+<span class="fc" id="L83">        return usuario;</span>
+    }
+
+    public void setUsuario(String usuario) {
+<span class="fc" id="L87">        this.usuario = usuario;</span>
+<span class="fc" id="L88">    }</span>
+
+    public String getAcao() {
+<span class="fc" id="L91">        return acao;</span>
+    }
+
+    public void setAcao(String acao) {
+<span class="fc" id="L95">        this.acao = acao;</span>
+<span class="fc" id="L96">    }</span>
+
+    public String getEntidade() {
+<span class="fc" id="L99">        return entidade;</span>
+    }
+
+    public void setEntidade(String entidade) {
+<span class="fc" id="L103">        this.entidade = entidade;</span>
+<span class="fc" id="L104">    }</span>
+
+    public Long getEntidadeId() {
+<span class="fc" id="L107">        return entidadeId;</span>
+    }
+
+    public void setEntidadeId(Long entidadeId) {
+<span class="fc" id="L111">        this.entidadeId = entidadeId;</span>
+<span class="fc" id="L112">    }</span>
+
+    public String getDetalhes() {
+<span class="fc" id="L115">        return detalhes;</span>
+    }
+
+    public void setDetalhes(String detalhes) {
+<span class="fc" id="L119">        this.detalhes = detalhes;</span>
+<span class="fc" id="L120">    }</span>
+
+    public String getIp() {
+<span class="fc" id="L123">        return ip;</span>
+    }
+
+    public void setIp(String ip) {
+<span class="fc" id="L127">        this.ip = ip;</span>
+<span class="fc" id="L128">    }</span>
+
+    public Instant getDataHora() {
+<span class="fc" id="L131">        return dataHora;</span>
+    }
+
+    public void setDataHora(Instant dataHora) {
+<span class="fc" id="L135">        this.dataHora = dataHora;</span>
+<span class="fc" id="L136">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

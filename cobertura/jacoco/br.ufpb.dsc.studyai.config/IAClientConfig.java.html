@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IAClientConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.config</a> &gt; <span class="el_source">IAClientConfig.java</span></div><h1>IAClientConfig.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.client.RestClient;
+
+import java.time.Duration;
+
+/**
+ * Configuração do cliente HTTP usado para falar com os provedores de IA.
+ *
+ * &lt;p&gt;Centraliza a criação do {@link RestClient} (timeout generoso — chamadas de LLM
+ * são lentas — e o {@link ObjectMapper} da aplicação para (de)serializar JSON). Expor
+ * o cliente como bean, em vez de construí-lo dentro do service, segue o princípio de
+ * injeção de dependências e &lt;strong&gt;torna o {@code IAServiceImpl} testável&lt;/strong&gt;:
+ * os testes injetam um {@code RestClient} ligado a um {@code MockRestServiceServer},
+ * sem bater na API real nem depender de chave/rede.
+ *
+ * @author DSC - UFPB Campus IV
+ */
+@Configuration
+<span class="fc" id="L25">public class IAClientConfig {</span>
+
+    /**
+     * Cria o {@link RestClient} dos provedores de IA com timeout configurável.
+     *
+     * @param props        propriedades da IA (fornecem o timeout)
+     * @param objectMapper mapeador JSON da aplicação
+     * @return cliente HTTP pronto para uso pelos provedores
+     */
+    @Bean
+    public RestClient iaRestClient(IAProperties props, ObjectMapper objectMapper) {
+<span class="fc" id="L36">        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();</span>
+<span class="fc" id="L37">        Duration timeout = Duration.ofSeconds(props.getTimeoutSegundos());</span>
+<span class="fc" id="L38">        factory.setConnectTimeout(timeout);</span>
+<span class="fc" id="L39">        factory.setReadTimeout(timeout);</span>
+
+<span class="fc" id="L41">        return RestClient.builder()</span>
+<span class="fc" id="L42">                .requestFactory(factory)</span>
+                // Garante que o JSON use o ObjectMapper da aplicação (config consistente).
+<span class="fc" id="L44">                .messageConverters(converters -&gt;</span>
+<span class="fc" id="L45">                        converters.add(0, new MappingJackson2HttpMessageConverter(objectMapper)))</span>
+<span class="fc" id="L46">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

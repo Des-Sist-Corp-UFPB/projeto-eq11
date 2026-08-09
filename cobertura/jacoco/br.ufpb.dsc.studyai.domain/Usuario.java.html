@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Usuario.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.domain</a> &gt; <span class="el_source">Usuario.java</span></div><h1>Usuario.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.domain;
+
+import jakarta.persistence.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Arrays;
+import java.util.Collection;
+
+@Entity
+@Table(name = &quot;usuario&quot;)
+public class Usuario implements UserDetails {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 50)
+    private String username;
+
+    @Column(nullable = false, length = 100)
+    private String password;
+
+    @Column(nullable = false)
+    private String roles; // Ex: &quot;ROLE_USER&quot;, &quot;ROLE_ADMIN,ROLE_USER&quot;
+
+    @Column(length = 100)
+    private String email;
+
+<span class="fc" id="L31">    @Column(length = 20)</span>
+    private String provider = &quot;LOCAL&quot;;
+
+    // Construtor vazio exigido pelo JPA
+<span class="fc" id="L35">    public Usuario() {</span>
+<span class="fc" id="L36">    }</span>
+
+<span class="fc" id="L38">    public Usuario(String username, String password, String roles) {</span>
+<span class="fc" id="L39">        this.username = username;</span>
+<span class="fc" id="L40">        this.password = password;</span>
+<span class="fc" id="L41">        this.roles = roles;</span>
+<span class="fc" id="L42">    }</span>
+
+    public Long getId() {
+<span class="fc" id="L45">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="fc" id="L49">        this.id = id;</span>
+<span class="fc" id="L50">    }</span>
+
+    public String getRoles() {
+<span class="fc" id="L53">        return roles;</span>
+    }
+
+    public void setRoles(String roles) {
+<span class="fc" id="L57">        this.roles = roles;</span>
+<span class="fc" id="L58">    }</span>
+
+    public String getEmail() {
+<span class="fc" id="L61">        return email;</span>
+    }
+
+    public void setEmail(String email) {
+<span class="fc" id="L65">        this.email = email;</span>
+<span class="fc" id="L66">    }</span>
+
+    public String getProvider() {
+<span class="fc" id="L69">        return provider;</span>
+    }
+
+    public void setProvider(String provider) {
+<span class="fc" id="L73">        this.provider = provider;</span>
+<span class="fc" id="L74">    }</span>
+
+    public void setUsername(String username) {
+<span class="fc" id="L77">        this.username = username;</span>
+<span class="fc" id="L78">    }</span>
+
+    public void setPassword(String password) {
+<span class="fc" id="L81">        this.password = password;</span>
+<span class="fc" id="L82">    }</span>
+
+    // --- Métodos do UserDetails ---
+
+    @Override
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+<span class="fc" id="L88">        return Arrays.stream(roles.split(&quot;,&quot;))</span>
+<span class="fc" id="L89">                .map(String::trim)</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">                .filter(s -&gt; !s.isEmpty())</span>
+<span class="fc" id="L91">                .map(SimpleGrantedAuthority::new)</span>
+<span class="fc" id="L92">                .toList();</span>
+    }
+
+    @Override
+    public String getPassword() {
+<span class="fc" id="L97">        return password;</span>
+    }
+
+    @Override
+    public String getUsername() {
+<span class="fc" id="L102">        return username;</span>
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+<span class="fc" id="L107">        return true;</span>
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+<span class="fc" id="L112">        return true;</span>
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+<span class="fc" id="L117">        return true;</span>
+    }
+
+    @Override
+    public boolean isEnabled() {
+<span class="fc" id="L122">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsuarioService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.service</a> &gt; <span class="el_source">UsuarioService.java</span></div><h1>UsuarioService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.service;
+
+import br.ufpb.dsc.studyai.domain.Usuario;
+import br.ufpb.dsc.studyai.dto.UsuarioRequest;
+import br.ufpb.dsc.studyai.repository.UsuarioRepository;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class UsuarioService implements UserDetailsService {
+
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+
+<span class="fc" id="L19">    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {</span>
+<span class="fc" id="L20">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L21">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L22">    }</span>
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+<span class="fc" id="L26">        return usuarioRepository.findByUsernameOrEmail(username, username)</span>
+<span class="fc" id="L27">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Usuário ou e-mail não encontrado: &quot; + username));</span>
+    }
+
+    @Transactional
+    public void cadastrarUsuario(UsuarioRequest request) {
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (!request.password().equals(request.confirmPassword())) {</span>
+<span class="fc" id="L33">            throw new IllegalArgumentException(&quot;As senhas não conferem.&quot;);</span>
+        }
+<span class="pc bpc" id="L35" title="1 of 4 branches missed.">        if (usuarioRepository.findByUsernameOrEmail(request.username(), request.email() != null ? request.email() : &quot;&quot;).isPresent()) {</span>
+<span class="fc" id="L36">            throw new IllegalArgumentException(&quot;Nome de usuário ou e-mail já existe.&quot;);</span>
+        }
+
+<span class="fc" id="L39">        Usuario usuario = new Usuario();</span>
+<span class="fc" id="L40">        usuario.setUsername(request.username());</span>
+<span class="fc" id="L41">        usuario.setEmail(request.email());</span>
+<span class="fc" id="L42">        usuario.setPassword(passwordEncoder.encode(request.password()));</span>
+<span class="fc" id="L43">        usuario.setProvider(&quot;LOCAL&quot;);</span>
+<span class="fc" id="L44">        usuario.setRoles(&quot;ROLE_USER&quot;);</span>
+
+<span class="fc" id="L46">        usuarioRepository.save(usuario);</span>
+<span class="fc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

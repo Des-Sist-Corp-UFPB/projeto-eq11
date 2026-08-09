@@ -12,11 +12,11 @@
     </parent>
 
     <groupId>br.ufpb.dsc</groupId>
-    <artifactId>mercado</artifactId>
+    <artifactId>studyai</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>mercado</name>
-    <description>Projeto base DSC - UFPB Campus IV</description>
+    <name>studyai</name>
+    <description>StudyAI BR — plataforma de estudos para Concursos e ENEM (DSC - UFPB Campus IV)</description>
 
     <properties>
         <java.version>21</java.version>
@@ -31,6 +31,18 @@
         <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <version>0.36.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- === WEB === -->
@@ -54,6 +66,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
 
         <!-- === BANCO DE DADOS === -->
@@ -104,12 +120,51 @@
             <version>${webjars-htmx.version}</version>
         </dependency>
 
+        <!-- === OBSERVABILIDADE: anotações do OpenTelemetry === -->
+        <!-- Fornece @WithSpan/@SpanAttribute para instrumentação manual. O agente Java
+             (anexado no Dockerfile) processa essas anotações em runtime; sem o agente,
+             elas são inertes e não afetam a execução. -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <version>2.11.0</version>
+        </dependency>
+
+        <!-- === IA: LangChain4j === -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-google-ai-gemini</artifactId> <!-- Usando Google AI ao invés de Vertex para simplificar com chave simples -->
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
+        </dependency>
+
         <!-- === DEV TOOLS (apenas desenvolvimento) === -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Lê o arquivo .env automaticamente -->
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>4.0.0</version>
         </dependency>
 
         <!-- === TESTES === -->
@@ -156,13 +211,22 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven-plugin.version}</version>
+                <configuration>
+                    <!-- A classe de bootstrap (apenas chama SpringApplication.run) não tem
+                         lógica testável e infla artificialmente os números — fica de fora. -->
+                    <excludes>
+                        <exclude>**/StudyAiApplication.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals><goal>prepare-agent</goal></goals>
                     </execution>
+                    <!-- Gera o relatório já na fase 'test', para que
+                         `mvn clean test jacoco:report` produza target/site/jacoco/. -->
                     <execution>
                         <id>report</id>
-                        <phase>verify</phase>
+                        <phase>test</phase>
                         <goals><goal>report</goal></goals>
                     </execution>
                 </executions>

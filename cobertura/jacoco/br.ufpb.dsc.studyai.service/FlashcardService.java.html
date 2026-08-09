@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlashcardService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.service</a> &gt; <span class="el_source">FlashcardService.java</span></div><h1>FlashcardService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.service;
+
+import br.ufpb.dsc.studyai.config.IAProperties;
+import br.ufpb.dsc.studyai.domain.Deck;
+import br.ufpb.dsc.studyai.domain.Flashcard;
+import br.ufpb.dsc.studyai.dto.FlashcardDTO;
+import br.ufpb.dsc.studyai.dto.FlashcardRequest;
+import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
+import br.ufpb.dsc.studyai.repository.DeckRepository;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@Transactional(readOnly = true)
+public class FlashcardService {
+
+<span class="fc" id="L27">    private static final DateTimeFormatter DATA_BR =</span>
+<span class="fc" id="L28">            DateTimeFormatter.ofPattern(&quot;dd/MM/yyyy&quot;).withZone(ZoneId.systemDefault());</span>
+
+    private final FlashcardAiService flashcardAiService;
+    private final DeckRepository deckRepository;
+    private final br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository;
+    private final IAProperties props;
+
+<span class="fc" id="L35">    public FlashcardService(FlashcardAiService flashcardAiService, DeckRepository deckRepository, br.ufpb.dsc.studyai.repository.UsuarioRepository usuarioRepository, IAProperties props) {</span>
+<span class="fc" id="L36">        this.flashcardAiService = flashcardAiService;</span>
+<span class="fc" id="L37">        this.deckRepository = deckRepository;</span>
+<span class="fc" id="L38">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L39">        this.props = props;</span>
+<span class="fc" id="L40">    }</span>
+
+    @Transactional
+    @WithSpan(&quot;flashcard.gerar&quot;)
+    public Deck gerar(FlashcardRequest request, @SpanAttribute(&quot;flashcard.usuario&quot;) String username) {
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        String banca = StringUtils.hasText(request.banca()) ? request.banca().trim() : &quot;Geral&quot;;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        String disciplina = request.disciplina() == null ? &quot;&quot; : request.disciplina().trim();</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        int quantidade = request.quantidade() &lt;= 0 ? 15 : Math.min(request.quantidade(), 30);</span>
+        
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        String texto = request.texto() == null ? &quot;&quot; : request.texto();</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (texto.length() &gt; 8000) {</span>
+<span class="nc" id="L51">            texto = texto.substring(0, 8000);</span>
+        }
+
+        List&lt;FlashcardDTO&gt; cartoes;
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (props.isDemo()) {</span>
+<span class="fc" id="L57">            cartoes = getFlashcardsDemo();</span>
+        } else {
+            try {
+<span class="fc" id="L60">                br.ufpb.dsc.studyai.dto.FlashcardResponse response = flashcardAiService.gerarFlashcards(banca, disciplina, quantidade, texto);</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">                cartoes = response != null ? response.cartoes() : null;</span>
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">                if (cartoes == null || cartoes.isEmpty()) {</span>
+<span class="fc" id="L63">                    throw new IAIndisponivelException(&quot;A IA não gerou nenhum flashcard válido.&quot;);</span>
+                }
+<span class="fc" id="L65">            } catch (Exception e) {</span>
+<span class="fc" id="L66">                e.printStackTrace();</span>
+<span class="fc" id="L67">                throw new IAIndisponivelException(&quot;Erro na IA: &quot; + e.getMessage(), e);</span>
+<span class="fc" id="L68">            }</span>
+        }
+
+<span class="fc" id="L71">        Deck deck = new Deck(montarTitulo(banca, disciplina), banca, disciplina);</span>
+<span class="fc" id="L72">        usuarioRepository.findByUsername(username).ifPresent(deck::setUsuario);</span>
+<span class="fc" id="L73">        int ordem = 0;</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        for (FlashcardDTO dto : cartoes) {</span>
+<span class="fc" id="L75">            deck.adicionarFlashcard(new Flashcard(dto.frente(), dto.verso(), ordem++));</span>
+<span class="fc" id="L76">        }</span>
+
+<span class="fc" id="L78">        Span.current()</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">                .setAttribute(&quot;flashcard.modo&quot;, props.isDemo() ? &quot;demo&quot; : &quot;real&quot;)</span>
+<span class="fc" id="L80">                .setAttribute(&quot;flashcard.banca&quot;, banca)</span>
+<span class="fc" id="L81">                .setAttribute(&quot;flashcard.quantidade&quot;, cartoes.size());</span>
+
+<span class="fc" id="L83">        return deckRepository.save(deck);</span>
+    }
+
+    public Optional&lt;Deck&gt; buscarDeck(Long id, String username) {
+<span class="fc" id="L87">        return deckRepository.findByIdAndUsuarioUsername(id, username).map(deck -&gt; {</span>
+<span class="fc" id="L88">            deck.getFlashcards().size(); // força a inicialização da coleção lazy</span>
+<span class="fc" id="L89">            return deck;</span>
+        });
+    }
+
+    private String montarTitulo(String banca, String disciplina) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        String base = StringUtils.hasText(disciplina) ? disciplina</span>
+<span class="pc bnc" id="L95" title="All 2 branches missed.">                : (!&quot;Geral&quot;.equalsIgnoreCase(banca) ? banca : &quot;Deck&quot;);</span>
+<span class="fc" id="L96">        return base + &quot; — &quot; + DATA_BR.format(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());</span>
+    }
+
+    private List&lt;FlashcardDTO&gt; getFlashcardsDemo() {
+<span class="fc" id="L100">        return List.of(</span>
+            new FlashcardDTO(&quot;O que é o princípio da legalidade na Administração Pública?&quot;, &quot;O administrador só pode fazer o que a lei autoriza ou determina (art. 37 da CF/88). Diferente do particular, que pode fazer tudo que a lei não proíbe.&quot;),
+            new FlashcardDTO(&quot;Quais são os princípios expressos da Administração Pública no art. 37 da CF/88?&quot;, &quot;Legalidade, Impessoalidade, Moralidade, Publicidade e Eficiência — o mnemônico LIMPE.&quot;),
+            new FlashcardDTO(&quot;Qual o prazo prescricional geral para a Fazenda Pública cobrar seus créditos tributários?&quot;, &quot;5 anos, contados do lançamento definitivo (art. 174 do CTN).&quot;),
+            new FlashcardDTO(&quot;O que caracteriza o ato administrativo discricionário?&quot;, &quot;Aquele em que a lei confere ao administrador margem de escolha quanto à conveniência e oportunidade (mérito administrativo), dentro dos limites legais.&quot;),
+            new FlashcardDTO(&quot;Qual a diferença entre revogação e anulação de um ato administrativo?&quot;, &quot;Revogação: ato legal, mas inconveniente/inoportuno, com efeitos ex nunc. Anulação: ato ilegal, com efeitos ex tunc (retroativos).&quot;),
+            new FlashcardDTO(&quot;O que estabelece o princípio da impessoalidade?&quot;, &quot;A Administração deve tratar todos sem discriminação, visando ao interesse público, sem favorecer ou prejudicar pessoas determinadas.&quot;),
+            new FlashcardDTO(&quot;Quem pode propor Ação Direta de Inconstitucionalidade (ADI)?&quot;, &quot;Os legitimados do art. 103 da CF/88, como o Presidente, a Mesa do Senado/Câmara, o PGR, o Conselho Federal da OAB e partidos políticos com representação no Congresso.&quot;),
+            new FlashcardDTO(&quot;O que é o controle de constitucionalidade difuso?&quot;, &quot;Aquele exercido por qualquer juiz ou tribunal, no caso concreto, de forma incidental, com efeitos inter partes.&quot;)
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

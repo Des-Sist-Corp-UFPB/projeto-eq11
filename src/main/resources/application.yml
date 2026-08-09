@@ -1,8 +1,54 @@
+server:
+  forward-headers-strategy: framework
+
 spring:
   application:
-    name: mercado
+    name: studyai
   profiles:
     active: dev
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope:
+              - email
+              - profile
+
+# =============================================================================
+# StudyAI — configuração da IA (módulo FlashIA)
+# =============================================================================
+# REGRA DE OURO: a chamada de IA é sempre no backend e a chave vem de variável de
+# ambiente — NUNCA versione segredos no código.
+#
+# modo=demo (padrão): retorna flashcards de EXEMPLO sem chamada externa. Permite
+# rodar a demo sem internet nem chave. Para usar IA real, defina STUDYAI_AI_MODO=real
+# e configure STUDYAI_AI_PROVEDOR / STUDYAI_AI_API_KEY / STUDYAI_AI_MODELO.
+studyai:
+  ia:
+    modo: ${STUDYAI_AI_MODO:demo}            # demo | real
+    provedor: ${STUDYAI_AI_PROVEDOR:openai}  # openai | anthropic | gemini
+    api-key: ${STUDYAI_AI_API_KEY:}          # vazio = força modo demo (mesmo com modo=real)
+    # O modelo precisa pertencer ao provedor acima. Trocar de provedor sem trocar
+    # o modelo é o erro mais comum (o provedor responde "modelo inexistente").
+    modelo: ${STUDYAI_AI_MODELO:gpt-4o-mini}
+    # Chamadas de LLM levam de 5 a 60s; o RoadmapIA pede um plano inteiro de uma vez.
+    timeout-segundos: ${STUDYAI_AI_TIMEOUT:120}
+
+  # Analytics de frontend (Umami). Vazio = o script não é injetado nas páginas.
+  # UMAMI_SRC: URL do script.js no servidor do professor (ex.: https://umami.dsc.rodrigor.com/script.js)
+  # UMAMI_WEBSITE_ID: UUID gerado ao cadastrar o site no painel do Umami.
+  umami:
+    src: ${UMAMI_SRC:}
+    website-id: ${UMAMI_WEBSITE_ID:}
+
+# Correlação log <-> trace: o agente do OpenTelemetry injeta trace_id e span_id no MDC.
+# Incluí-los no padrão do console permite pular do log direto para o trace no Grafana.
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [trace_id=%X{trace_id} span_id=%X{span_id}] %logger{36} - %msg%n"
 
 # Actuator - monitoramento da aplicação
 # Acesse: http://localhost:8080/actuator/health

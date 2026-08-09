@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoadmapService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.service</a> &gt; <span class="el_source">RoadmapService.java</span></div><h1>RoadmapService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.service;
+
+import br.ufpb.dsc.studyai.config.IAProperties;
+import br.ufpb.dsc.studyai.domain.Roadmap;
+import br.ufpb.dsc.studyai.domain.SemanaEstudo;
+import br.ufpb.dsc.studyai.domain.TarefaEstudo;
+import br.ufpb.dsc.studyai.dto.RoadmapRequest;
+import br.ufpb.dsc.studyai.dto.RoadmapResponse;
+import br.ufpb.dsc.studyai.dto.SemanaPlanejada;
+import br.ufpb.dsc.studyai.dto.TarefaPlanejada;
+import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
+import br.ufpb.dsc.studyai.repository.RoadmapRepository;
+import br.ufpb.dsc.studyai.repository.UsuarioRepository;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Regra de negócio do módulo &lt;strong&gt;RoadmapIA&lt;/strong&gt;.
+ *
+ * &lt;p&gt;Fluxo: valida o questionário → calcula os blocos semanais no servidor → pede o
+ * conteúdo à IA → valida o que voltou → persiste o plano.
+ *
+ * &lt;p&gt;&lt;strong&gt;Por que o calendário é calculado aqui e não pela IA?&lt;/strong&gt;&lt;br&gt;
+ * Modelos de linguagem erram aritmética de datas com frequência. Calculando as semanas
+ * em Java garantimos que o plano cobre exatamente o intervalo escolhido pelo aluno; a
+ * IA fica responsável só pelo conteúdo pedagógico (foco da semana e tarefas). Se a IA
+ * devolver uma data fora da semana, o serviço corrige em vez de gravar lixo.
+ *
+ * @author DSC - UFPB Campus IV
+ */
+@Service
+@Transactional(readOnly = true)
+public class RoadmapService {
+
+<span class="fc" id="L51">    private static final Logger log = LoggerFactory.getLogger(RoadmapService.class);</span>
+
+<span class="fc" id="L53">    private static final DateTimeFormatter DATA_BR = DateTimeFormatter.ofPattern(&quot;dd/MM/yyyy&quot;);</span>
+
+    /**
+     * Teto de semanas por plano (~6 meses).
+     *
+     * &lt;p&gt;Existe por dois motivos: um plano detalhado de mais de meio ano estoura o limite
+     * de resposta do modelo e vira conteúdo repetido, e a chamada demoraria mais que o
+     * timeout configurado em {@code studyai.ia.timeout-segundos}.
+     */
+    static final int MAX_SEMANAS = 26;
+
+    /** Acima deste número de semanas, reduzimos as tarefas por semana para caber na resposta. */
+    private static final int LIMIAR_PLANO_LONGO = 8;
+
+    private static final int TAREFAS_PLANO_CURTO = 6;
+    private static final int TAREFAS_PLANO_LONGO = 4;
+
+    private static final int DURACAO_MINIMA_MINUTOS = 15;
+
+    /** Focos usados no modo demo e como rede de segurança quando a IA pula uma semana. */
+<span class="fc" id="L73">    private static final String[] FOCOS_PADRAO = {</span>
+            &quot;Matemática: funções e proporcionalidade&quot;,
+            &quot;Linguagens: interpretação e figuras de linguagem&quot;,
+            &quot;Ciências da Natureza: mecânica e termologia&quot;,
+            &quot;Ciências Humanas: Brasil República e geopolítica&quot;,
+            &quot;Redação: estrutura e proposta de intervenção&quot;,
+            &quot;Matemática: geometria e estatística&quot;,
+            &quot;Ciências da Natureza: química orgânica e ecologia&quot;,
+            &quot;Revisão geral e simulado completo&quot;
+    };
+
+    private final RoadmapAiService roadmapAiService;
+    private final RoadmapRepository roadmapRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final IAProperties props;
+
+    public RoadmapService(RoadmapAiService roadmapAiService,
+                          RoadmapRepository roadmapRepository,
+                          UsuarioRepository usuarioRepository,
+<span class="fc" id="L92">                          IAProperties props) {</span>
+<span class="fc" id="L93">        this.roadmapAiService = roadmapAiService;</span>
+<span class="fc" id="L94">        this.roadmapRepository = roadmapRepository;</span>
+<span class="fc" id="L95">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L96">        this.props = props;</span>
+<span class="fc" id="L97">    }</span>
+
+    /**
+     * Gera e persiste um roadmap de estudos a partir do questionário de perfil.
+     *
+     * @param request  respostas do questionário
+     * @param username dono do plano
+     * @return roadmap já persistido, com semanas e tarefas
+     * @throws IllegalArgumentException  se o período informado for inválido
+     * @throws IAIndisponivelException   se a chamada à IA falhar
+     */
+    @Transactional
+    @WithSpan(&quot;roadmap.gerar&quot;)
+    public Roadmap gerar(RoadmapRequest request, @SpanAttribute(&quot;roadmap.usuario&quot;) String username) {
+<span class="fc" id="L111">        LocalDate inicio = parseData(request.dataInicio(), &quot;data de início&quot;);</span>
+<span class="fc" id="L112">        LocalDate fim = parseData(request.dataFim(), &quot;data final&quot;);</span>
+<span class="fc" id="L113">        validarPeriodo(inicio, fim);</span>
+
+<span class="fc" id="L115">        int horasPorDia = normalizarHoras(request.horasPorDia());</span>
+<span class="fc" id="L116">        String dificuldades = juntarDificuldades(request.dificuldades());</span>
+<span class="fc" id="L117">        String cursoAlvo = ouPadrao(request.cursoAlvo(), &quot;não informado&quot;);</span>
+<span class="fc" id="L118">        String experiencia = ouPadrao(request.experiencia(), &quot;não informado&quot;);</span>
+<span class="fc" id="L119">        String observacoes = ouPadrao(request.observacoes(), &quot;nenhuma&quot;);</span>
+
+<span class="fc" id="L121">        List&lt;Periodo&gt; periodos = calcularSemanas(inicio, fim);</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        int tarefasPorSemana = periodos.size() &lt;= LIMIAR_PLANO_LONGO</span>
+<span class="fc" id="L123">                ? TAREFAS_PLANO_CURTO</span>
+<span class="pc" id="L124">                : TAREFAS_PLANO_LONGO;</span>
+
+        RoadmapResponse resposta;
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (props.isDemo()) {</span>
+<span class="fc" id="L128">            log.info(&quot;RoadmapIA operando em MODO DEMO.&quot;);</span>
+<span class="fc" id="L129">            resposta = respostaDemo(periodos, cursoAlvo, horasPorDia, tarefasPorSemana);</span>
+        } else {
+<span class="fc" id="L131">            resposta = chamarIa(inicio, fim, periodos.size(), tarefasPorSemana,</span>
+                    horasPorDia, cursoAlvo, dificuldades, experiencia, observacoes);
+        }
+
+<span class="fc" id="L135">        Roadmap roadmap = montarRoadmap(resposta, periodos, inicio, fim, horasPorDia, cursoAlvo);</span>
+<span class="fc" id="L136">        roadmap.setDificuldades(dificuldades);</span>
+<span class="fc" id="L137">        roadmap.setExperiencia(experiencia);</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">        roadmap.setObservacoes(StringUtils.hasText(request.observacoes()) ? request.observacoes().trim() : null);</span>
+<span class="fc" id="L139">        usuarioRepository.findByUsername(username).ifPresent(roadmap::setUsuario);</span>
+
+        // Enriquece o trace com dados de negócio: ajuda a diagnosticar planos grandes/lentos.
+<span class="fc" id="L142">        Span.current()</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">                .setAttribute(&quot;roadmap.modo&quot;, props.isDemo() ? &quot;demo&quot; : &quot;real&quot;)</span>
+<span class="fc" id="L144">                .setAttribute(&quot;roadmap.semanas&quot;, roadmap.getSemanas().size())</span>
+<span class="fc" id="L145">                .setAttribute(&quot;roadmap.tarefas&quot;, roadmap.getTotalTarefas());</span>
+
+<span class="fc" id="L147">        return roadmapRepository.save(roadmap);</span>
+    }
+
+    /**
+     * Busca um roadmap do usuário já com as semanas e tarefas carregadas.
+     *
+     * @param id       identificador do roadmap
+     * @param username dono esperado
+     * @return o roadmap, ou vazio se não existir ou não pertencer ao usuário
+     */
+    public Optional&lt;Roadmap&gt; buscarRoadmap(Long id, String username) {
+<span class="nc" id="L158">        return roadmapRepository.findByIdAndUsuarioUsername(id, username).map(roadmap -&gt; {</span>
+            // Força a inicialização das coleções lazy ainda dentro da transação
+<span class="nc" id="L160">            roadmap.getSemanas().forEach(semana -&gt; semana.getTarefas().size());</span>
+<span class="nc" id="L161">            return roadmap;</span>
+        });
+    }
+
+    // ==========================================================================
+    // Chamada à IA
+    // ==========================================================================
+
+    private RoadmapResponse chamarIa(LocalDate inicio, LocalDate fim, int totalSemanas,
+                                     int tarefasPorSemana, int horasPorDia, String cursoAlvo,
+                                     String dificuldades, String experiencia, String observacoes) {
+        try {
+<span class="fc" id="L173">            log.info(&quot;Gerando roadmap de {} semanas ({} a {})...&quot;, totalSemanas, inicio, fim);</span>
+<span class="fc" id="L174">            RoadmapResponse resposta = roadmapAiService.gerarRoadmap(</span>
+<span class="fc" id="L175">                    inicio.toString(), fim.toString(), totalSemanas, tarefasPorSemana,</span>
+                    horasPorDia, cursoAlvo, dificuldades, experiencia, observacoes);
+
+<span class="pc bpc" id="L178" title="2 of 6 branches missed.">            if (resposta == null || resposta.semanas() == null || resposta.semanas().isEmpty()) {</span>
+<span class="fc" id="L179">                throw new IAIndisponivelException(&quot;A IA não conseguiu montar um plano de estudos. Tente novamente.&quot;);</span>
+            }
+<span class="fc" id="L181">            return resposta;</span>
+<span class="fc" id="L182">        } catch (IAIndisponivelException e) {</span>
+<span class="fc" id="L183">            throw e;</span>
+<span class="fc" id="L184">        } catch (Exception e) {</span>
+<span class="fc" id="L185">            log.error(&quot;Erro ao gerar roadmap de estudos&quot;, e);</span>
+<span class="fc" id="L186">            throw new IAIndisponivelException(</span>
+                    &quot;Não foi possível gerar seu plano de estudos agora. Tente novamente em alguns instantes.&quot;, e);
+        }
+    }
+
+    // ==========================================================================
+    // Calendário (calculado no servidor)
+    // ==========================================================================
+
+    /** Intervalo de uma semana do plano. A última pode ser mais curta que 7 dias. */
+<span class="fc" id="L196">    private record Periodo(int numero, LocalDate inicio, LocalDate fim) {</span>
+    }
+
+    private List&lt;Periodo&gt; calcularSemanas(LocalDate inicio, LocalDate fim) {
+<span class="fc" id="L200">        List&lt;Periodo&gt; periodos = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L201">        LocalDate cursor = inicio;</span>
+<span class="fc" id="L202">        int numero = 1;</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        while (!cursor.isAfter(fim)) {</span>
+<span class="fc" id="L204">            LocalDate ultimoDia = cursor.plusDays(6);</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">            if (ultimoDia.isAfter(fim)) {</span>
+<span class="fc" id="L206">                ultimoDia = fim;</span>
+            }
+<span class="fc" id="L208">            periodos.add(new Periodo(numero++, cursor, ultimoDia));</span>
+<span class="fc" id="L209">            cursor = ultimoDia.plusDays(1);</span>
+<span class="fc" id="L210">        }</span>
+<span class="fc" id="L211">        return periodos;</span>
+    }
+
+    // ==========================================================================
+    // Montagem do plano (valida o que a IA devolveu)
+    // ==========================================================================
+
+    private Roadmap montarRoadmap(RoadmapResponse resposta, List&lt;Periodo&gt; periodos,
+                                  LocalDate inicio, LocalDate fim, int horasPorDia, String cursoAlvo) {
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">        String titulo = StringUtils.hasText(resposta.titulo())</span>
+<span class="fc" id="L221">                ? truncar(resposta.titulo().trim(), 160)</span>
+<span class="pc" id="L222">                : &quot;Plano ENEM — &quot; + DATA_BR.format(inicio) + &quot; a &quot; + DATA_BR.format(fim);</span>
+
+<span class="fc" id="L224">        Roadmap roadmap = new Roadmap(titulo, inicio, fim, horasPorDia);</span>
+<span class="fc" id="L225">        roadmap.setCursoAlvo(truncar(cursoAlvo, 120));</span>
+<span class="fc" id="L226">        roadmap.setResumoEstrategia(resposta.resumoEstrategia());</span>
+
+        // Indexa o que a IA devolveu pelo número da semana, para casar com o calendário real.
+<span class="fc" id="L229">        Map&lt;Integer, SemanaPlanejada&gt; planejadas = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        for (SemanaPlanejada semana : resposta.semanas()) {</span>
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">            if (semana != null) {</span>
+<span class="fc" id="L232">                planejadas.putIfAbsent(semana.numero(), semana);</span>
+            }
+<span class="fc" id="L234">        }</span>
+
+        // Percorre o calendário (e não a resposta da IA): assim o plano cobre o período inteiro
+        // mesmo que a IA tenha pulado ou repetido semanas.
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        for (Periodo periodo : periodos) {</span>
+<span class="fc" id="L239">            SemanaPlanejada planejada = planejadas.get(periodo.numero());</span>
+<span class="pc bpc" id="L240" title="1 of 4 branches missed.">            List&lt;TarefaPlanejada&gt; tarefas = planejada != null &amp;&amp; planejada.tarefas() != null</span>
+<span class="fc" id="L241">                    ? planejada.tarefas()</span>
+<span class="fc" id="L242">                    : tarefasPadrao(periodo, horasPorDia, TAREFAS_PLANO_CURTO);</span>
+
+<span class="pc bpc" id="L244" title="1 of 4 branches missed.">            String foco = planejada != null &amp;&amp; StringUtils.hasText(planejada.foco())</span>
+<span class="fc" id="L245">                    ? truncar(planejada.foco().trim(), 160)</span>
+<span class="fc" id="L246">                    : focoPadrao(periodo.numero());</span>
+
+<span class="fc bfc" id="L248" title="All 2 branches covered.">            if (planejada == null) {</span>
+<span class="fc" id="L249">                log.warn(&quot;A IA não devolveu a semana {}; preenchida com o plano padrão.&quot;, periodo.numero());</span>
+            }
+
+<span class="fc" id="L252">            SemanaEstudo semana = new SemanaEstudo(periodo.numero(), periodo.inicio(), periodo.fim(), foco);</span>
+<span class="fc" id="L253">            int ordem = 0;</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">            for (TarefaPlanejada tarefa : tarefas) {</span>
+<span class="pc bpc" id="L255" title="2 of 4 branches missed.">                if (tarefa == null || !StringUtils.hasText(tarefa.assunto())) {</span>
+<span class="nc" id="L256">                    continue;</span>
+                }
+<span class="fc" id="L258">                semana.adicionarTarefa(new TarefaEstudo(</span>
+<span class="fc" id="L259">                        resolverData(tarefa.data(), periodo, ordem),</span>
+<span class="fc" id="L260">                        truncar(tarefa.assunto().trim(), 160),</span>
+<span class="fc" id="L261">                        tarefa.descricao(),</span>
+<span class="fc" id="L262">                        normalizarDuracao(tarefa.duracaoMinutos(), horasPorDia),</span>
+                        ordem++));
+<span class="fc" id="L264">            }</span>
+<span class="fc" id="L265">            roadmap.adicionarSemana(semana);</span>
+<span class="fc" id="L266">        }</span>
+<span class="fc" id="L267">        return roadmap;</span>
+    }
+
+    /**
+     * Converte a data devolvida pela IA, garantindo que ela caia dentro da semana.
+     *
+     * &lt;p&gt;Quando a data vem ausente, mal formatada ou fora do intervalo, a tarefa é
+     * distribuída pela ordem em que veio — o plano continua coerente em vez de gravar
+     * uma data inválida.
+     */
+    private LocalDate resolverData(String bruta, Periodo periodo, int indice) {
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">        if (StringUtils.hasText(bruta)) {</span>
+            try {
+<span class="fc" id="L280">                LocalDate data = LocalDate.parse(bruta.trim());</span>
+<span class="pc bpc" id="L281" title="1 of 4 branches missed.">                if (!data.isBefore(periodo.inicio()) &amp;&amp; !data.isAfter(periodo.fim())) {</span>
+<span class="fc" id="L282">                    return data;</span>
+                }
+<span class="fc" id="L284">                log.debug(&quot;Data {} fora da semana {}; reposicionada.&quot;, bruta, periodo.numero());</span>
+<span class="fc" id="L285">            } catch (DateTimeParseException e) {</span>
+<span class="fc" id="L286">                log.debug(&quot;Data '{}' em formato inesperado na semana {}; reposicionada.&quot;, bruta, periodo.numero());</span>
+<span class="fc" id="L287">            }</span>
+        }
+<span class="fc" id="L289">        long diasNaSemana = ChronoUnit.DAYS.between(periodo.inicio(), periodo.fim());</span>
+<span class="fc" id="L290">        return periodo.inicio().plusDays(Math.min(indice, diasNaSemana));</span>
+    }
+
+    private int normalizarDuracao(int minutos, int horasPorDia) {
+<span class="fc" id="L294">        int maximo = horasPorDia * 60;</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">        if (minutos &lt; DURACAO_MINIMA_MINUTOS) {</span>
+<span class="fc" id="L296">            return DURACAO_MINIMA_MINUTOS;</span>
+        }
+<span class="fc" id="L298">        return Math.min(minutos, maximo);</span>
+    }
+
+    // ==========================================================================
+    // Modo demo (funciona sem chave de API e sem internet)
+    // ==========================================================================
+
+    private RoadmapResponse respostaDemo(List&lt;Periodo&gt; periodos, String cursoAlvo,
+                                         int horasPorDia, int tarefasPorSemana) {
+<span class="fc" id="L307">        List&lt;SemanaPlanejada&gt; semanas = periodos.stream()</span>
+<span class="fc" id="L308">                .map(p -&gt; new SemanaPlanejada(</span>
+<span class="fc" id="L309">                        p.numero(),</span>
+<span class="fc" id="L310">                        focoPadrao(p.numero()),</span>
+<span class="fc" id="L311">                        tarefasPadrao(p, horasPorDia, tarefasPorSemana)))</span>
+<span class="fc" id="L312">                .toList();</span>
+
+<span class="fc" id="L314">        String titulo = &quot;Plano ENEM — &quot; + periodos.size() + &quot; semanas&quot;</span>
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">                + (&quot;não informado&quot;.equals(cursoAlvo) ? &quot;&quot; : &quot; · &quot; + cursoAlvo);</span>
+
+<span class="fc" id="L317">        return new RoadmapResponse(</span>
+                titulo,
+                &quot;Plano de exemplo gerado em modo demonstração: as áreas do ENEM se alternam ao longo &quot;
+                        + &quot;das semanas, com redação recorrente e simulado ao final de cada bloco. &quot;
+                        + &quot;Configure uma chave de IA para receber um plano personalizado pelo seu perfil.&quot;,
+                semanas);
+    }
+
+    private List&lt;TarefaPlanejada&gt; tarefasPadrao(Periodo periodo, int horasPorDia, int quantidade) {
+<span class="fc" id="L326">        String[] modelos = {</span>
+                &quot;Teoria do foco da semana|Leitura ativa do conteúdo principal, com resumo em tópicos.&quot;,
+                &quot;Exercícios do foco da semana|Resolução de questões do ENEM sobre o tema estudado.&quot;,
+                &quot;Redação|Produção de um texto dissertativo-argumentativo cronometrado.&quot;,
+                &quot;Revisão espaçada|Revisão dos assuntos das semanas anteriores usando flashcards.&quot;,
+                &quot;Questões de anos anteriores|Bateria de questões de provas passadas, com correção comentada.&quot;,
+                &quot;Simulado parcial|Bloco de questões cronometrado, simulando o ritmo da prova.&quot;
+        };
+
+<span class="fc" id="L335">        long diasNaSemana = ChronoUnit.DAYS.between(periodo.inicio(), periodo.fim()) + 1;</span>
+<span class="fc" id="L336">        int total = (int) Math.min(quantidade, diasNaSemana);</span>
+<span class="fc" id="L337">        int minutosPorTarefa = Math.max(DURACAO_MINIMA_MINUTOS, (horasPorDia * 60) / 2);</span>
+
+<span class="fc" id="L339">        List&lt;TarefaPlanejada&gt; tarefas = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L340" title="All 2 branches covered.">        for (int i = 0; i &lt; total; i++) {</span>
+<span class="fc" id="L341">            String[] partes = modelos[i % modelos.length].split(&quot;\\|&quot;);</span>
+<span class="fc" id="L342">            tarefas.add(new TarefaPlanejada(</span>
+<span class="fc" id="L343">                    periodo.inicio().plusDays(i).toString(),</span>
+                    partes[0],
+                    partes[1],
+                    minutosPorTarefa));
+        }
+<span class="fc" id="L348">        return tarefas;</span>
+    }
+
+    private String focoPadrao(int numeroSemana) {
+<span class="fc" id="L352">        return FOCOS_PADRAO[(numeroSemana - 1) % FOCOS_PADRAO.length];</span>
+    }
+
+    // ==========================================================================
+    // Validação e normalização das respostas do questionário
+    // ==========================================================================
+
+    private LocalDate parseData(String valor, String campo) {
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        if (!StringUtils.hasText(valor)) {</span>
+<span class="fc" id="L361">            throw new IllegalArgumentException(&quot;Informe a &quot; + campo + &quot;.&quot;);</span>
+        }
+        try {
+<span class="fc" id="L364">            return LocalDate.parse(valor.trim());</span>
+<span class="nc" id="L365">        } catch (DateTimeParseException e) {</span>
+<span class="nc" id="L366">            throw new IllegalArgumentException(&quot;A &quot; + campo + &quot; informada não é uma data válida.&quot;);</span>
+        }
+    }
+
+    private void validarPeriodo(LocalDate inicio, LocalDate fim) {
+<span class="fc bfc" id="L371" title="All 2 branches covered.">        if (!fim.isAfter(inicio)) {</span>
+<span class="fc" id="L372">            throw new IllegalArgumentException(&quot;A data final precisa ser posterior à data de início.&quot;);</span>
+        }
+<span class="fc" id="L374">        long dias = ChronoUnit.DAYS.between(inicio, fim) + 1;</span>
+<span class="fc" id="L375">        long semanas = (long) Math.ceil(dias / 7.0);</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        if (semanas &gt; MAX_SEMANAS) {</span>
+<span class="fc" id="L377">            throw new IllegalArgumentException(</span>
+                    &quot;O período informado tem &quot; + semanas + &quot; semanas. Gere planos de no máximo &quot;
+                            + MAX_SEMANAS + &quot; semanas (cerca de 6 meses) por vez.&quot;);
+        }
+<span class="fc" id="L381">    }</span>
+
+    private int normalizarHoras(int horas) {
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">        if (horas &lt; 1) {</span>
+<span class="nc" id="L385">            return 2;</span>
+        }
+<span class="fc" id="L387">        return Math.min(horas, 12);</span>
+    }
+
+    private String juntarDificuldades(List&lt;String&gt; dificuldades) {
+<span class="pc bpc" id="L391" title="2 of 4 branches missed.">        if (dificuldades == null || dificuldades.isEmpty()) {</span>
+<span class="nc" id="L392">            return &quot;não informou áreas específicas&quot;;</span>
+        }
+<span class="fc" id="L394">        String juntas = String.join(&quot;, &quot;, dificuldades);</span>
+<span class="fc" id="L395">        return truncar(juntas, 255);</span>
+    }
+
+    private String ouPadrao(String valor, String padrao) {
+<span class="fc bfc" id="L399" title="All 2 branches covered.">        return StringUtils.hasText(valor) ? valor.trim() : padrao;</span>
+    }
+
+    private String truncar(String valor, int limite) {
+<span class="pc bpc" id="L403" title="1 of 2 branches missed.">        if (valor == null) {</span>
+<span class="nc" id="L404">            return null;</span>
+        }
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">        return valor.length() &lt;= limite ? valor : valor.substring(0, limite);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

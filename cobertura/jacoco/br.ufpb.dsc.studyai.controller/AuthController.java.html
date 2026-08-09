@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.controller;
+
+import br.ufpb.dsc.studyai.dto.UsuarioRequest;
+import br.ufpb.dsc.studyai.service.UsuarioService;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+/**
+ * Controller de autenticação — gerencia as rotas relacionadas a login/logout.
+ *
+ * &lt;p&gt;O Spring Security cuida automaticamente do processamento do formulário de login
+ * (validação de credenciais, criação da sessão, etc.). Este controller apenas
+ * serve a &lt;strong&gt;página&lt;/strong&gt; de login — o Spring Security intercepta o POST.
+ *
+ * &lt;p&gt;&lt;strong&gt;Fluxo do Spring Security Form Login:&lt;/strong&gt;
+ * &lt;ol&gt;
+ *   &lt;li&gt;Usuário acessa uma rota protegida (ex.: {@code /flashcards}).&lt;/li&gt;
+ *   &lt;li&gt;Spring Security detecta que não está autenticado e redireciona para {@code /login}.&lt;/li&gt;
+ *   &lt;li&gt;Este controller serve a página HTML de login.&lt;/li&gt;
+ *   &lt;li&gt;Usuário submete o formulário com username/password para {@code POST /login}.&lt;/li&gt;
+ *   &lt;li&gt;Spring Security intercepta o POST, valida as credenciais e redireciona para {@code /}.&lt;/li&gt;
+ * &lt;/ol&gt;
+ *
+ * &lt;p&gt;A URL de processamento do login ({@code POST /login}) é gerenciada &lt;em&gt;internamente&lt;/em&gt;
+ * pelo Spring Security — não precisamos (nem devemos) criar um método para ela aqui.
+ *
+ * @author DSC - UFPB Campus IV
+ */
+@Controller
+public class AuthController {
+
+    private final UsuarioService usuarioService;
+
+<span class="fc" id="L37">    public AuthController(UsuarioService usuarioService) {</span>
+<span class="fc" id="L38">        this.usuarioService = usuarioService;</span>
+<span class="fc" id="L39">    }</span>
+
+    /**
+     * Serve a página de login customizada.
+     *
+     * &lt;p&gt;O Spring Security redireciona automaticamente para esta URL quando
+     * o usuário tenta acessar um recurso protegido sem estar autenticado.
+     * Isso é configurado em {@link SecurityConfig} com {@code .loginPage(&quot;/login&quot;)}.
+     *
+     * &lt;p&gt;O Thymeleaf recebe parâmetros {@code ?error} e {@code ?logout} automaticamente
+     * na URL quando há erro de autenticação ou logout bem-sucedido, respectivamente.
+     * O template usa {@code th:if=&quot;${param.error}&quot;} para exibir mensagens.
+     *
+     * @return nome do template Thymeleaf da página de login
+     */
+    @GetMapping(&quot;/login&quot;)
+    public String login() {
+<span class="fc" id="L56">        return &quot;auth/login&quot;;</span>
+    }
+
+    @GetMapping(&quot;/cadastro&quot;)
+    public String cadastro() {
+<span class="nc" id="L61">        return &quot;auth/cadastro&quot;;</span>
+    }
+
+    @PostMapping(&quot;/cadastro/salvar&quot;)
+    public String salvarCadastro(
+            @RequestParam String username,
+            @RequestParam(required = false) String email,
+            @RequestParam String password,
+            @RequestParam String confirmPassword,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+<span class="nc" id="L73">            usuarioService.cadastrarUsuario(new UsuarioRequest(username, email, password, confirmPassword));</span>
+<span class="nc" id="L74">            redirectAttributes.addFlashAttribute(&quot;sucesso&quot;, &quot;Cadastro realizado! Você já pode fazer login.&quot;);</span>
+<span class="nc" id="L75">            return &quot;redirect:/login&quot;;</span>
+<span class="nc" id="L76">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L77">            redirectAttributes.addFlashAttribute(&quot;erro&quot;, e.getMessage());</span>
+<span class="nc" id="L78">            return &quot;redirect:/cadastro&quot;;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

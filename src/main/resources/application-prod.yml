@@ -1,18 +1,23 @@
 spring:
   datasource:
-    # Em produção, as credenciais vêm de variáveis de ambiente — NUNCA hardcode!
-    # Configure no sistema operacional, Docker, Kubernetes secrets, etc.
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    # Em produção as credenciais vêm de variáveis de ambiente (arquivo .env injetado
+    # pelo docker-compose.yml) — NUNCA hardcode segredos neste arquivo, que é
+    # versionado no git. A URL é montada a partir de DB_HOST/DB_PORT/DB_NAME.
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: false
   flyway:
     enabled: true
+    locations: classpath:db/migration
+    clean-on-validation-error: true
+    clean-disabled: false
 
 logging:
   level:
-    root: WARN
-    br.ufpb.dsc.mercado: INFO
+    br.ufpb.dsc.studyai: INFO
+    org.springframework.web: WARN

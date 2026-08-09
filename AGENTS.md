@@ -1,4 +1,4 @@
-# AI Agents Context — Mercado DSC/UFPB
+# AI Agents Context — StudyAI DSC/UFPB
 
 > Este arquivo fornece contexto para ferramentas de IA (Cursor, GitHub Copilot, etc.)
 > Para Claude Code, veja CLAUDE.md (mais completo).
@@ -7,7 +7,7 @@
 Boilerplate Spring Boot para disciplina universitária. Java 21, Spring Boot 3.4.5, PostgreSQL, Thymeleaf+HTMX+Bootstrap.
 
 ## Pacote base
-`br.ufpb.dsc.mercado`
+`br.ufpb.dsc.studyai`
 
 ## Padrões importantes
 - DTOs são Records Java imutáveis
@@ -22,7 +22,7 @@ Boilerplate Spring Boot para disciplina universitária. Java 21, Spring Boot 3.4
 mvn spring-boot:run                    # rodar local
 mvn test                               # testes (requer Docker)
 mvn verify -Psecurity                  # SAST + CVE check
-docker compose -f docker/docker-compose.dev.yml up  # ambiente completo
+docker compose up  # ambiente completo
 ```
 
 Leia `docs/ARCHITECTURE.md` para detalhes arquiteturais.

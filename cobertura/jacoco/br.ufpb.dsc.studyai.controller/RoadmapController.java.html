@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoadmapController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">studyai</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.studyai.controller</a> &gt; <span class="el_source">RoadmapController.java</span></div><h1>RoadmapController.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.studyai.controller;
+
+import br.ufpb.dsc.studyai.audit.AuditLogService;
+import br.ufpb.dsc.studyai.domain.Roadmap;
+import br.ufpb.dsc.studyai.dto.RoadmapRequest;
+import br.ufpb.dsc.studyai.exception.IAIndisponivelException;
+import br.ufpb.dsc.studyai.service.RoadmapService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.security.Principal;
+
+/**
+ * Controller do módulo &lt;strong&gt;RoadmapIA&lt;/strong&gt;.
+ *
+ * &lt;p&gt;Rotas:
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@code GET /roadmap} — questionário de perfil + área de resultado.&lt;/li&gt;
+ *   &lt;li&gt;{@code GET /roadmap/{id}} — reabre um plano já gerado.&lt;/li&gt;
+ *   &lt;li&gt;{@code POST /roadmap/gerar} — gera o plano e devolve um &lt;em&gt;fragmento&lt;/em&gt;
+ *       Thymeleaf, trocado na página via HTMX (sem recarregar).&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * @author DSC - UFPB Campus IV
+ */
+@Controller
+@RequestMapping(&quot;/roadmap&quot;)
+public class RoadmapController {
+
+    private final RoadmapService roadmapService;
+    private final AuditLogService auditLogService;
+
+<span class="fc" id="L38">    public RoadmapController(RoadmapService roadmapService, AuditLogService auditLogService) {</span>
+<span class="fc" id="L39">        this.roadmapService = roadmapService;</span>
+<span class="fc" id="L40">        this.auditLogService = auditLogService;</span>
+<span class="fc" id="L41">    }</span>
+
+    /**
+     * Exibe a página do RoadmapIA com o questionário de perfil.
+     *
+     * @param model modelo Thymeleaf
+     * @return template da página
+     */
+    @GetMapping
+    public String pagina(Model model) {
+<span class="fc" id="L51">        model.addAttribute(&quot;titulo&quot;, &quot;RoadmapIA&quot;);</span>
+<span class="fc" id="L52">        return &quot;studyai/roadmap&quot;;</span>
+    }
+
+    /**
+     * Reabre um plano salvo, renderizando a página já com o cronograma preenchido.
+     *
+     * @param id        identificador do roadmap
+     * @param model     modelo Thymeleaf
+     * @param principal usuário autenticado
+     * @return página do RoadmapIA com o plano carregado (ou o placeholder, se não existir)
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    public String abrirRoadmap(@PathVariable Long id, Model model, Principal principal) {
+<span class="fc" id="L65">        model.addAttribute(&quot;titulo&quot;, &quot;RoadmapIA&quot;);</span>
+<span class="fc" id="L66">        roadmapService.buscarRoadmap(id, principal.getName())</span>
+<span class="fc" id="L67">                .ifPresent(roadmap -&gt; model.addAttribute(&quot;roadmap&quot;, roadmap));</span>
+        // Se o plano não existir (ou for de outro usuário), a página exibe o placeholder padrão
+<span class="fc" id="L69">        return &quot;studyai/roadmap&quot;;</span>
+    }
+
+    /**
+     * Gera o plano de estudos a partir do questionário e devolve o fragmento do cronograma.
+     *
+     * &lt;p&gt;Acionado pelo HTMX: {@code hx-post=&quot;/roadmap/gerar&quot;},
+     * {@code hx-target=&quot;#roadmap-resultado&quot;}, {@code hx-indicator=&quot;#roadmap-loading&quot;}.
+     *
+     * @param request   respostas do questionário (mapeadas pelo nome dos campos)
+     * @param model     modelo Thymeleaf
+     * @param principal usuário autenticado
+     * @return fragmento com o cronograma, ou fragmento de erro amigável
+     */
+    @PostMapping(&quot;/gerar&quot;)
+    public String gerar(@ModelAttribute RoadmapRequest request, Model model, Principal principal) {
+        try {
+<span class="fc" id="L86">            Roadmap roadmap = roadmapService.gerar(request, principal.getName());</span>
+
+            // Auditoria: registra a geração do plano (usuário e IP resolvidos no service)
+<span class="fc" id="L89">            auditLogService.registrar(</span>
+<span class="fc" id="L90">                    &quot;GERAR_ROADMAP&quot;, &quot;roadmap&quot;, roadmap.getId(),</span>
+<span class="fc" id="L91">                    roadmap.getSemanas().size() + &quot; semanas; &quot; + roadmap.getTotalTarefas() + &quot; tarefas&quot;);</span>
+
+<span class="fc" id="L93">            model.addAttribute(&quot;roadmap&quot;, roadmap);</span>
+<span class="fc" id="L94">            return &quot;studyai/fragments/roadmap-result :: roadmap&quot;;</span>
+<span class="fc" id="L95">        } catch (IllegalArgumentException e) {</span>
+            // Questionário inválido (datas ausentes, período invertido ou longo demais)
+<span class="fc" id="L97">            model.addAttribute(&quot;mensagem&quot;, e.getMessage());</span>
+<span class="fc" id="L98">            return &quot;studyai/fragments/roadmap-result :: erro&quot;;</span>
+<span class="fc" id="L99">        } catch (IAIndisponivelException e) {</span>
+<span class="fc" id="L100">            model.addAttribute(&quot;mensagem&quot;, e.getMessage());</span>
+<span class="fc" id="L101">            return &quot;studyai/fragments/roadmap-result :: erro&quot;;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
